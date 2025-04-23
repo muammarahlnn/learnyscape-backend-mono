@@ -27,7 +27,7 @@ func NewHttpServer(cfg *config.Config) *HttpServer {
 	router.ContextWithFallback = true
 	router.HandleMethodNotAllowed = true
 
-	registerMiddleware(router, cfg)
+	registerMiddleware(router)
 	provider.BootstrapHttp(cfg, router)
 
 	return &HttpServer{
@@ -63,7 +63,7 @@ func (s *HttpServer) Shutdown() {
 	log.Println("HTTP server shudown gracefully")
 }
 
-func registerMiddleware(router *gin.Engine, cfg *config.Config) {
+func registerMiddleware(router *gin.Engine) {
 	middlewares := []gin.HandlerFunc{
 		gin.Recovery(),
 		gzip.Gzip(gzip.BestSpeed),
