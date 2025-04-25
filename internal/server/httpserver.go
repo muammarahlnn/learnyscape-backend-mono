@@ -7,6 +7,7 @@ import (
 	"learnyscape-backend-mono/internal/config"
 	"learnyscape-backend-mono/internal/log"
 	"learnyscape-backend-mono/internal/provider"
+	"learnyscape-backend-mono/pkg/middleware"
 	"net/http"
 	"time"
 
@@ -66,6 +67,7 @@ func (s *HttpServer) Shutdown() {
 func registerMiddleware(router *gin.Engine) {
 	middlewares := []gin.HandlerFunc{
 		gin.Recovery(),
+		middleware.LoggerMiddleware(log.Logger),
 		gzip.Gzip(gzip.BestSpeed),
 		cors.New(cors.Config{
 			AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTION", "PATCH", "HEAD"},
