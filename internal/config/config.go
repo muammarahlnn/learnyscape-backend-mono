@@ -12,6 +12,7 @@ type Config struct {
 	App        *AppConfig
 	HttpServer *HttpServerConfig
 	Logger     *LoggerConfig
+	Postgres   *PostgresConfig
 }
 
 func InitConfig() *Config {
@@ -19,7 +20,7 @@ func InitConfig() *Config {
 	viper.AddConfigPath(configPath)
 	viper.SetConfigName(".env")
 	viper.SetConfigType("env")
-	 
+
 	if err := viper.ReadInConfig(); err != nil {
 		log.Fatalf("error reading config file: %v", err)
 	}
@@ -28,6 +29,7 @@ func InitConfig() *Config {
 		App:        initAppConfig(),
 		HttpServer: initHttpServerConfig(),
 		Logger:     initLoggerConfig(),
+		Postgres:   initPostgresConfig(),
 	}
 }
 
