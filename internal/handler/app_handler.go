@@ -15,6 +15,6 @@ func NewAppHandler() *AppHandler {
 
 func (h *AppHandler) Route(r *gin.Engine) {
 	r.GET("/ping", func(ctx *gin.Context) {
-		ctx.JSON(http.StatusOK, "pong")
+		ctx.JSON(http.StatusOK, "gokss air verse is cooking here!")
 	})
 }

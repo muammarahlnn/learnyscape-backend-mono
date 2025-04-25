@@ -1,7 +1,12 @@
 services:
   backend:
-    build: .
+    container_name: learnyscape-mono-backend
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
     ports:
       - "8080:8080"
-    container_name: learnyscape-mono-backend
+    volumes:
+      - ./:/app
+      - /app/tmp
     restart: unless-stopped
