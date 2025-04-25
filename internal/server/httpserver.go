@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"learnyscape-backend-mono/internal/config"
+	"learnyscape-backend-mono/internal/log"
 	"learnyscape-backend-mono/internal/provider"
-	"log"
 	"net/http"
 	"time"
 
@@ -40,14 +40,14 @@ func NewHttpServer(cfg *config.Config) *HttpServer {
 }
 
 func (s *HttpServer) Start() {
-	log.Println("Running HTTP server on port:", s.cfg.HttpServer.Port)
+	log.Logger.Info("Running HTTP server on port:", s.cfg.HttpServer.Port)
 
 	err := s.srv.ListenAndServe()
 	if err != nil && !errors.Is(err, http.ErrServerClosed) {
-		log.Fatal("Error while HTTP server listening:", err)
+		log.Logger.Fatal("Error while HTTP server listening:", err)
 	}
 
-	log.Println("HTTP server is not receiving new requests...:")
+	log.Logger.Info("HTTP server is not receiving new requests...:")
 }
 
 func (s *HttpServer) Shutdown() {
@@ -55,12 +55,12 @@ func (s *HttpServer) Shutdown() {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	log.Println("Attempting  to shutdown HTTP server...")
+	log.Logger.Info("Attempting  to shutdown HTTP server...")
 	if err := s.srv.Shutdown(ctx); err != nil {
-		log.Fatal("Error shutting down HTTP server:", err)
+		log.Logger.Fatal("Error shutting down HTTP server:", err)
 	}
 
-	log.Println("HTTP server shudown gracefully")
+	log.Logger.Info("HTTP server shudown gracefully")
 }
 
 func registerMiddleware(router *gin.Engine) {
