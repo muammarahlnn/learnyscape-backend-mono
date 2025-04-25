@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"learnyscape-backend-mono/pkg/httperror"
 	"learnyscape-backend-mono/pkg/logger"
 	"net/http"
 	"time"
@@ -35,10 +36,13 @@ func LoggerMiddleware(logger logger.Logger) gin.HandlerFunc {
 func logErrors(ctx *gin.Context, logger logger.Logger, params map[string]any) {
 	errors := []error{}
 	for _, err := range ctx.Errors {
-		switch err.Err.(type) {
+		switch e := err.Err.(type) {
 		case *validator.ValidationErrors:
 			params["status_code"] = http.StatusBadRequest
 			errors = append(errors, err)
+		case *httperror.ResponseError:
+			params["status_code"] = e.Code()
+			errors = append(errors, e.OriginalError())
 		default:
 			params["status_code"] = http.StatusInternalServerError
 			errors = append(errors, err)
