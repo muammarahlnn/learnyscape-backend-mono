@@ -28,6 +28,7 @@ func NewHttpServer(cfg *config.Config) *HttpServer {
 	router.ContextWithFallback = true
 	router.HandleMethodNotAllowed = true
 
+	// TODO: add validators
 	registerMiddleware(router)
 	provider.BootstrapHttp(cfg, router)
 

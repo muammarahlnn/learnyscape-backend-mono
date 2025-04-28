@@ -10,4 +10,6 @@ import (
 func BootstrapHttp(cfg *config.Config, router *gin.Engine) {
 	appHandler := handler.NewAppHandler()
 	appHandler.Route(router)
+
+	BootstrapAuth(router)
 }
