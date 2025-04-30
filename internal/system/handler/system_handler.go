@@ -7,20 +7,20 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type AppHandler struct {
+type SystemHandler struct {
 }
 
-func NewAppHandler() *AppHandler {
-	return &AppHandler{}
+func NewSystemHandler() *SystemHandler {
+	return &SystemHandler{}
 }
 
-func (h *AppHandler) Route(r *gin.Engine) {
+func (h *SystemHandler) Route(r *gin.Engine) {
 	r.NoRoute(h.routeNotFound)
 	r.NoMethod(h.methodNotAllowed)
 	r.GET("/ping", h.ping)
 }
 
-func (h *AppHandler) ping(ctx *gin.Context) {
+func (h *SystemHandler) ping(ctx *gin.Context) {
 	ctx.JSON(
 		http.StatusOK,
 		dto.WebResponse[any]{
@@ -29,7 +29,7 @@ func (h *AppHandler) ping(ctx *gin.Context) {
 	)
 }
 
-func (h *AppHandler) routeNotFound(ctx *gin.Context) {
+func (h *SystemHandler) routeNotFound(ctx *gin.Context) {
 	ctx.JSON(
 		http.StatusOK,
 		dto.WebResponse[any]{
@@ -38,7 +38,7 @@ func (h *AppHandler) routeNotFound(ctx *gin.Context) {
 	)
 }
 
-func (h *AppHandler) methodNotAllowed(ctx *gin.Context) {
+func (h *SystemHandler) methodNotAllowed(ctx *gin.Context) {
 	ctx.JSON(
 		http.StatusOK,
 		dto.WebResponse[any]{
