@@ -32,7 +32,7 @@ func NewHttpServer(cfg *config.Config) *HttpServer {
 	router.HandleMethodNotAllowed = true
 
 	registerValidators()
-	registerMiddleware(router)
+	registerMiddleware(router, cfg)
 	provider.BootstrapHttp(cfg, router)
 
 	return &HttpServer{
@@ -74,12 +74,13 @@ func registerValidators() {
 	}
 }
 
-func registerMiddleware(router *gin.Engine) {
+func registerMiddleware(router *gin.Engine, cfg *config.Config) {
 	middlewares := []gin.HandlerFunc{
 		gin.Recovery(),
 		middleware.LoggerMiddleware(log.Logger),
 		gzip.Gzip(gzip.BestSpeed),
 		middleware.ErrorMiddleware(),
+		middleware.TimeoutCancelMiddleware(cfg.HttpServer.RequestTimeoutPeriod),
 		cors.New(cors.Config{
 			AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTION", "PATCH", "HEAD"},
 			AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Authorization"},
