@@ -8,12 +8,15 @@ import (
 	"learnyscape-backend-mono/internal/log"
 	"learnyscape-backend-mono/internal/provider"
 	"learnyscape-backend-mono/pkg/middleware"
+	validatorutil "learnyscape-backend-mono/pkg/util/validator"
 	"net/http"
 	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
+	"github.com/go-playground/validator/v10"
 )
 
 type HttpServer struct {
@@ -28,7 +31,7 @@ func NewHttpServer(cfg *config.Config) *HttpServer {
 	router.ContextWithFallback = true
 	router.HandleMethodNotAllowed = true
 
-	// TODO: add validators
+	registerValidators()
 	registerMiddleware(router)
 	provider.BootstrapHttp(cfg, router)
 
@@ -63,6 +66,12 @@ func (s *HttpServer) Shutdown() {
 	}
 
 	log.Logger.Info("HTTP server shudown gracefully")
+}
+
+func registerValidators() {
+	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
+		v.RegisterTagNameFunc(validatorutil.TagNameFormatter)
+	}
 }
 
 func registerMiddleware(router *gin.Engine) {
