@@ -79,6 +79,7 @@ func registerMiddleware(router *gin.Engine) {
 		gin.Recovery(),
 		middleware.LoggerMiddleware(log.Logger),
 		gzip.Gzip(gzip.BestSpeed),
+		middleware.ErrorMiddleware(),
 		cors.New(cors.Config{
 			AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTION", "PATCH", "HEAD"},
 			AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Authorization"},
