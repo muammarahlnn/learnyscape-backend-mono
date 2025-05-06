@@ -71,6 +71,7 @@ func (s *HttpServer) Shutdown() {
 func registerValidators() {
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
 		v.RegisterTagNameFunc(validationutil.TagNameFormatter)
+		v.RegisterValidation("password", validationutil.Password)
 	}
 }
 
