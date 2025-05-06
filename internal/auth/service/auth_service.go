@@ -36,7 +36,7 @@ func (s *authServiceImpl) Login(ctx context.Context, req *dto.LoginRequest) (*dt
 	err := s.dataStore.Atomic(ctx, func(ds repository.AuthDataStore) error {
 		userRepo := ds.UserRepository()
 
-		user, err := userRepo.FindByUsername(ctx, req.Username)
+		user, err := userRepo.FindByUsername(ctx, req.Identifier)
 		if err != nil {
 			return err
 		}

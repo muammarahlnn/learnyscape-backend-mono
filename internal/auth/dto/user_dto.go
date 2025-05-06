@@ -1,8 +1,8 @@
 package dto
 
 type LoginRequest struct {
-	Username string `json:"username" binding:"required"`
-	Password string `json:"password" binding:"required,min=8"`
+	Identifier string `json:"identifier" binding:"required"`
+	Password   string `json:"password" binding:"required,min=8"`
 }
 
 type LoginResponse struct {

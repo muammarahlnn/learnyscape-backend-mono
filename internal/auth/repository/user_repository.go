@@ -9,7 +9,7 @@ import (
 )
 
 type UserRepository interface {
-	FindByUsername(ctx context.Context, username string) (*entity.User, error)
+	FindByUsername(ctx context.Context, identifier string) (*entity.User, error)
 }
 
 type userRepositoryImpl struct {
@@ -22,7 +22,7 @@ func NewUserRepository(db data.DBTX) UserRepository {
 	}
 }
 
-func (r *userRepositoryImpl) FindByUsername(ctx context.Context, username string) (*entity.User, error) {
+func (r *userRepositoryImpl) FindByUsername(ctx context.Context, identifier string) (*entity.User, error) {
 	query := `
 	SELECT
 		u.id,
@@ -40,12 +40,12 @@ func (r *userRepositoryImpl) FindByUsername(ctx context.Context, username string
 		u.role_id = r.id
 		AND r.deleted_at IS NULL
 	WHERE
-		u.username = $1
+		(u.username = $1 OR u.email = $1)
 		AND u.deleted_at IS NULL
 	`
 
 	var user entity.User
-	err := r.db.QueryRowContext(ctx, query, username).Scan(
+	err := r.db.QueryRowContext(ctx, query, identifier).Scan(
 		&user.ID,
 		&user.Username,
 		&user.Email,
