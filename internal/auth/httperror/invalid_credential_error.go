@@ -1,0 +1,15 @@
+package httperror
+
+import (
+	"errors"
+	"learnyscape-backend-mono/internal/auth/constant"
+	"learnyscape-backend-mono/pkg/httperror"
+	"net/http"
+)
+
+func NewInvalidCredentialError() *httperror.ResponseError {
+	msg := constant.InvalidCredentialErrorMessage
+	err := errors.New(msg)
+
+	return httperror.NewResponseError(err, http.StatusUnauthorized, msg)
+}

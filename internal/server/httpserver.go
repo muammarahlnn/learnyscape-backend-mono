@@ -8,7 +8,7 @@ import (
 	"learnyscape-backend-mono/internal/log"
 	"learnyscape-backend-mono/internal/provider"
 	"learnyscape-backend-mono/pkg/middleware"
-	validatorutil "learnyscape-backend-mono/pkg/util/validator"
+	validationutil "learnyscape-backend-mono/pkg/util/validation"
 	"net/http"
 	"time"
 
@@ -70,7 +70,7 @@ func (s *HttpServer) Shutdown() {
 
 func registerValidators() {
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
-		v.RegisterTagNameFunc(validatorutil.TagNameFormatter)
+		v.RegisterTagNameFunc(validationutil.TagNameFormatter)
 	}
 }
 

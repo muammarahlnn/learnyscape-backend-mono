@@ -8,7 +8,7 @@ import (
 	"learnyscape-backend-mono/pkg/constant"
 	"learnyscape-backend-mono/pkg/dto"
 	"learnyscape-backend-mono/pkg/httperror"
-	validationutil "learnyscape-backend-mono/pkg/util/validator"
+	validationutil "learnyscape-backend-mono/pkg/util/validation"
 	"net/http"
 	"time"
 
@@ -84,6 +84,7 @@ func handleHttpResponseError(ctx *gin.Context, err *httperror.ResponseError) {
 		},
 	)
 }
+
 func handleValidationError(ctx *gin.Context, err validator.ValidationErrors) {
 	ve := []*dto.FieldError{}
 

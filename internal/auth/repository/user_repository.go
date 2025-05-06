@@ -2,11 +2,14 @@ package repository
 
 import (
 	"context"
+	"database/sql"
+	"errors"
+	"learnyscape-backend-mono/internal/auth/entity"
 	"learnyscape-backend-mono/internal/data"
 )
 
 type UserRepository interface {
-	Test(ctx context.Context) (string, error)
+	FindByUsername(ctx context.Context, username string) (*entity.User, error)
 }
 
 type userRepositoryImpl struct {
@@ -19,16 +22,44 @@ func NewUserRepository(db data.DBTX) UserRepository {
 	}
 }
 
-func (r *userRepositoryImpl) Test(ctx context.Context) (string, error) {
+func (r *userRepositoryImpl) FindByUsername(ctx context.Context, username string) (*entity.User, error) {
 	query := `
-	SELECT NOW()
+	SELECT
+		u.id,
+		u.username,
+		u.email,
+		u.hash_password,
+		u.full_name,
+		u.profile_pic_url,
+		r.name
+	FROM
+		users u
+	JOIN
+		roles r
+	ON
+		u.role_id = r.id
+		AND r.deleted_at IS NULL
+	WHERE
+		u.username = $1
+		AND u.deleted_at IS NULL
 	`
 
-	var now string
-	err := r.db.QueryRowContext(ctx, query).Scan(&now)
+	var user entity.User
+	err := r.db.QueryRowContext(ctx, query, username).Scan(
+		&user.ID,
+		&user.Username,
+		&user.Email,
+		&user.HashPassword,
+		&user.FullName,
+		&user.ProfilePicURL,
+		&user.Role,
+	)
 	if err != nil {
-		return "", err
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
 	}
 
-	return now, nil
+	return &user, nil
 }

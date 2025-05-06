@@ -1,9 +1,9 @@
 package handler
 
 import (
+	"learnyscape-backend-mono/internal/auth/dto"
 	"learnyscape-backend-mono/internal/auth/service"
-	"learnyscape-backend-mono/pkg/dto"
-	"net/http"
+	ginutil "learnyscape-backend-mono/pkg/util/gin"
 
 	"github.com/gin-gonic/gin"
 )
@@ -18,16 +18,25 @@ func NewAuthHandler(authService service.AuthService) *AuthHandler {
 	}
 }
 
-func (h *AuthHandler) Route(r *gin.Engine) {
-	r.GET("/auth/test", h.test)
+func (h *AuthHandler) Route(r *gin.RouterGroup) {
+	g := r.Group("/auth")
+	{
+		g.POST("/login", h.login)
+	}
 }
 
-func (h *AuthHandler) test(ctx *gin.Context) {
-	res, err := h.authService.Test(ctx)
+func (h *AuthHandler) login(ctx *gin.Context) {
+	var req dto.LoginRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	res, err := h.authService.Login(ctx.Request.Context(), &req)
 	if err != nil {
 		ctx.Error(err)
 		return
 	}
 
-	ctx.JSON(http.StatusOK, dto.WebResponse[string]{Message: res})
+	ginutil.ResponseOK(ctx, res)
 }
