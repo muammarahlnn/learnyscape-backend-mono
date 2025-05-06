@@ -3,21 +3,21 @@ package data
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	"github.com/jmoiron/sqlx"
 )
 
 type DBTX interface {
-	ExecContext(context.Context, string, ...interface{}) (sql.Result, error)
-	QueryContext(context.Context, string, ...interface{}) (*sql.Rows, error)
-	QueryxContext(context.Context, string, ...interface{}) (*sqlx.Rows, error)
-	QueryRowContext(context.Context, string, ...interface{}) *sql.Row
-	QueryRowxContext(context.Context, string, ...interface{}) *sqlx.Row
+	ExecContext(context.Context, string, ...any) (sql.Result, error)
+	QueryContext(context.Context, string, ...any) (*sql.Rows, error)
+	QueryxContext(context.Context, string, ...any) (*sqlx.Rows, error)
+	QueryRowContext(context.Context, string, ...any) *sql.Row
+	QueryRowxContext(context.Context, string, ...any) *sqlx.Row
 }
 
 type DataStore interface {
 	DB() DBTX
-	Atomic(ctx context.Context, fn func(DataStore) error) error
 }
 
 type dataStore struct {
@@ -36,7 +36,7 @@ func (s *dataStore) DB() DBTX {
 	return s.db
 }
 
-func (s *dataStore) Atomic(ctx context.Context, fn func(DataStore) error) error {
+func (s *dataStore) atomic(ctx context.Context, fn func(DataStore) error) error {
 	tx, err := s.conn.BeginTxx(ctx, &sql.TxOptions{})
 	if err != nil {
 		return err
@@ -50,5 +50,25 @@ func (s *dataStore) Atomic(ctx context.Context, fn func(DataStore) error) error 
 		return err
 	}
 
-	return tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func Atomic[T any](ctx context.Context, baseDs DataStore, wrap func(DataStore) T, handler func(T) error) error {
+	ds, ok := baseDs.(*dataStore)
+	if !ok {
+		panic(fmt.Sprintf("baseDs is not a dataStore: %T", baseDs))
+	}
+
+	return ds.atomic(ctx, func(ds DataStore) error {
+		domainDs := wrap(ds)
+		if err := handler(domainDs); err != nil {
+			return err
+		}
+
+		return nil
+	})
 }
