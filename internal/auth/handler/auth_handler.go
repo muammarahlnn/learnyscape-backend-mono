@@ -22,6 +22,7 @@ func (h *AuthHandler) Route(r *gin.RouterGroup) {
 	g := r.Group("/auth")
 	{
 		g.POST("/login", h.login)
+		g.POST("/register", h.register)
 	}
 }
 
@@ -32,7 +33,23 @@ func (h *AuthHandler) login(ctx *gin.Context) {
 		return
 	}
 
-	res, err := h.authService.Login(ctx.Request.Context(), &req)
+	res, err := h.authService.Login(ctx, &req)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	ginutil.ResponseOK(ctx, res)
+}
+
+func (h *AuthHandler) register(ctx *gin.Context) {
+	var req dto.RegisterRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	res, err := h.authService.Register(ctx, &req)
 	if err != nil {
 		ctx.Error(err)
 		return

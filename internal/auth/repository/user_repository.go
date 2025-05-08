@@ -9,7 +9,8 @@ import (
 )
 
 type UserRepository interface {
-	FindByUsername(ctx context.Context, identifier string) (*entity.User, error)
+	FindByIdentifier(ctx context.Context, identifier string) (*entity.User, error)
+	Create(ctx context.Context, params *entity.CreateUserParams) (*entity.User, error)
 }
 
 type userRepositoryImpl struct {
@@ -22,7 +23,7 @@ func NewUserRepository(db data.DBTX) UserRepository {
 	}
 }
 
-func (r *userRepositoryImpl) FindByUsername(ctx context.Context, identifier string) (*entity.User, error) {
+func (r *userRepositoryImpl) FindByIdentifier(ctx context.Context, identifier string) (*entity.User, error) {
 	query := `
 	SELECT
 		u.id,
@@ -58,6 +59,68 @@ func (r *userRepositoryImpl) FindByUsername(ctx context.Context, identifier stri
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
+		return nil, err
+	}
+
+	return &user, nil
+}
+
+func (r *userRepositoryImpl) Create(ctx context.Context, params *entity.CreateUserParams) (*entity.User, error) {
+	query := `
+	INSERT INTO 
+		users (
+			username,
+			email,
+			hash_password,
+			full_name,
+			role_id
+		)
+	VALUES
+		($1, $2, $3, $4, $5)
+	RETURNING
+		id,
+		username,
+		email,
+		full_name,
+		role_id,
+		created_at,
+		updated_at
+	`
+
+	var (
+		user   entity.User
+		roleID int64
+	)
+	if err := r.db.QueryRowContext(
+		ctx,
+		query,
+		params.Username,
+		params.Email,
+		params.HashPassword,
+		params.FullName,
+		params.RoleID,
+	).Scan(
+		&user.ID,
+		&user.Username,
+		&user.Email,
+		&user.FullName,
+		&roleID,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	); err != nil {
+		return nil, err
+	}
+
+	query = `
+	SELECT
+		name
+	FROM
+		roles
+	WHERE
+		id = $1
+		AND deleted_at IS NULL
+	`
+	if err := r.db.QueryRowContext(ctx, query, roleID).Scan(&user.Role); err != nil {
 		return nil, err
 	}
 

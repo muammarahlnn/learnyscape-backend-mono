@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"learnyscape-backend-mono/internal/auth/dto"
+	"learnyscape-backend-mono/internal/auth/entity"
 	"learnyscape-backend-mono/internal/auth/httperror"
 	"learnyscape-backend-mono/internal/auth/repository"
 	encryptutil "learnyscape-backend-mono/pkg/util/encrypt"
@@ -11,6 +12,7 @@ import (
 
 type AuthService interface {
 	Login(ctx context.Context, req *dto.LoginRequest) (*dto.LoginResponse, error)
+	Register(ctx context.Context, req *dto.RegisterRequest) (*dto.RegisterResponse, error)
 }
 
 type authServiceImpl struct {
@@ -36,7 +38,7 @@ func (s *authServiceImpl) Login(ctx context.Context, req *dto.LoginRequest) (*dt
 	err := s.dataStore.Atomic(ctx, func(ds repository.AuthDataStore) error {
 		userRepo := ds.UserRepository()
 
-		user, err := userRepo.FindByUsername(ctx, req.Identifier)
+		user, err := userRepo.FindByIdentifier(ctx, req.Identifier)
 		if err != nil {
 			return err
 		}
@@ -54,6 +56,54 @@ func (s *authServiceImpl) Login(ctx context.Context, req *dto.LoginRequest) (*dt
 		}
 
 		res.AccessToken = token
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
+func (s *authServiceImpl) Register(ctx context.Context, req *dto.RegisterRequest) (*dto.RegisterResponse, error) {
+	var res *dto.RegisterResponse
+	err := s.dataStore.Atomic(ctx, func(ds repository.AuthDataStore) error {
+		userRepo := ds.UserRepository()
+
+		user, err := userRepo.FindByIdentifier(ctx, req.Username)
+		if err != nil {
+			return err
+		}
+		if user != nil {
+			return httperror.NewUserAlreadyExistsError()
+		}
+
+		user, err = userRepo.FindByIdentifier(ctx, req.Email)
+		if err != nil {
+			return err
+		}
+		if user != nil {
+			return httperror.NewUserAlreadyExistsError()
+		}
+
+		hashedPassword, err := s.hasher.Hash(req.Password)
+		if err != nil {
+			return err
+		}
+
+		params := &entity.CreateUserParams{
+			Username:     req.Username,
+			Email:        req.Email,
+			HashPassword: hashedPassword,
+			FullName:     req.FullName,
+			RoleID:       req.RoleID,
+		}
+		user, err = userRepo.Create(ctx, params)
+		if err != nil {
+			return err
+		}
+
+		res = dto.ToRegisterResponse(user)
 		return nil
 	})
 	if err != nil {
