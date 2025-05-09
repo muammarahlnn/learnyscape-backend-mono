@@ -13,6 +13,7 @@ import (
 type AuthService interface {
 	Login(ctx context.Context, req *dto.LoginRequest) (*dto.LoginResponse, error)
 	Register(ctx context.Context, req *dto.RegisterRequest) (*dto.RegisterResponse, error)
+	Refresh(ctx context.Context, req *dto.RefreshRequest) (*dto.LoginResponse, error)
 }
 
 type authServiceImpl struct {
@@ -50,12 +51,23 @@ func (s *authServiceImpl) Login(ctx context.Context, req *dto.LoginRequest) (*dt
 			return httperror.NewInvalidCredentialError()
 		}
 
-		token, err := s.jwt.Sign(&jwtutil.JWTPayload{UserID: user.ID, Role: user.Role})
+		jwtPayload := &jwtutil.JWTPayload{
+			UserID: user.ID,
+			Role:   user.Role,
+		}
+
+		accessToken, err := s.jwt.SignAccess(jwtPayload)
 		if err != nil {
 			return err
 		}
+		res.AccessToken = accessToken
 
-		res.AccessToken = token
+		refreshToken, err := s.jwt.SignRefresh(jwtPayload)
+		if err != nil {
+			return err
+		}
+		res.RefreshToken = refreshToken
+
 		return nil
 	})
 	if err != nil {
@@ -110,5 +122,35 @@ func (s *authServiceImpl) Register(ctx context.Context, req *dto.RegisterRequest
 		return nil, err
 	}
 
+	return res, nil
+}
+
+func (s *authServiceImpl) Refresh(ctx context.Context, req *dto.RefreshRequest) (*dto.LoginResponse, error) {
+	claims, err := s.jwt.ParseRefresh(req.RefreshToken)
+	if err != nil {
+		return nil, httperror.NewInvalidRefreshTokenError()
+	}
+
+	if claims.UserID == 0 {
+		return nil, httperror.NewInvalidRefreshTokenError()
+	}
+
+	if claims.Role == "" {
+		return nil, httperror.NewInvalidRefreshTokenError()
+	}
+
+	payload := &jwtutil.JWTPayload{
+		UserID: claims.UserID,
+		Role:   claims.Role,
+	}
+	accessToken, err := s.jwt.SignAccess(payload)
+	if err != nil {
+		return nil, err
+	}
+
+	res := &dto.LoginResponse{
+		AccessToken:  accessToken,
+		RefreshToken: req.RefreshToken,
+	}
 	return res, nil
 }

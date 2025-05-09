@@ -10,8 +10,10 @@ import (
 )
 
 type JWTUtil interface {
-	Sign(payload *JWTPayload) (string, error)
-	Parse(token string) (*JWTClaims, error)
+	SignAccess(payload *JWTPayload) (string, error)
+	SignRefresh(payload *JWTPayload) (string, error)
+	ParseAccess(token string) (*JWTClaims, error)
+	ParseRefresh(token string) (*JWTClaims, error)
 }
 
 type JWTPayload struct {
@@ -35,7 +37,27 @@ func NewJWTUtil() JWTUtil {
 	}
 }
 
-func (j *jwtUtil) Sign(payload *JWTPayload) (string, error) {
+func (j *jwtUtil) SignAccess(payload *JWTPayload) (string, error) {
+	duration := time.Now().Add(time.Duration(j.config.AccessTokenDuration) * time.Minute)
+	signed, err := j.sign(payload, duration, j.config.AccessSecretKey)
+	if err != nil {
+		return "", err
+	}
+
+	return signed, nil
+}
+
+func (j *jwtUtil) SignRefresh(payload *JWTPayload) (string, error) {
+	duration := time.Now().Add(time.Duration(j.config.RefreshTokenDuration) * time.Minute)
+	signed, err := j.sign(payload, duration, j.config.RefreshSecretKey)
+	if err != nil {
+		return "", err
+	}
+
+	return signed, nil
+}
+
+func (j *jwtUtil) sign(payload *JWTPayload, duration time.Time, key string) (string, error) {
 	currentTime := time.Now()
 
 	token := jwt.NewWithClaims(
@@ -45,14 +67,14 @@ func (j *jwtUtil) Sign(payload *JWTPayload) (string, error) {
 				ID:        uuid.NewString(),
 				Issuer:    j.config.Issuer,
 				IssuedAt:  jwt.NewNumericDate(currentTime),
-				ExpiresAt: jwt.NewNumericDate(currentTime.Add(time.Duration(j.config.TokenDuration) * time.Minute)),
+				ExpiresAt: jwt.NewNumericDate(duration),
 			},
 			UserID: payload.UserID,
 			Role:   payload.Role,
 		},
 	)
 
-	signedStr, err := token.SignedString([]byte(j.config.SecretKey))
+	signedStr, err := token.SignedString([]byte(key))
 	if err != nil {
 		return "", err
 	}
@@ -60,15 +82,8 @@ func (j *jwtUtil) Sign(payload *JWTPayload) (string, error) {
 	return signedStr, nil
 }
 
-func (j *jwtUtil) Parse(token string) (*JWTClaims, error) {
-	parser := jwt.NewParser(
-		jwt.WithValidMethods(j.config.AllowedAlgs),
-		jwt.WithIssuer(j.config.Issuer),
-		jwt.WithIssuedAt(),
-		jwt.WithExpirationRequired(),
-	)
-
-	claims, err := j.parseClaims(parser, token)
+func (j *jwtUtil) ParseAccess(token string) (*JWTClaims, error) {
+	claims, err := j.parse(token, j.config.AccessSecretKey)
 	if err != nil {
 		return nil, err
 	}
@@ -76,18 +91,44 @@ func (j *jwtUtil) Parse(token string) (*JWTClaims, error) {
 	return claims, nil
 }
 
-func (j *jwtUtil) parseClaims(parser *jwt.Parser, token string) (*JWTClaims, error) {
+func (j *jwtUtil) ParseRefresh(token string) (*JWTClaims, error) {
+	claims, err := j.parse(token, j.config.RefreshSecretKey)
+	if err != nil {
+		return nil, err
+	}
+
+	return claims, nil
+}
+
+func (j *jwtUtil) parse(token, key string) (*JWTClaims, error) {
+	parser := jwt.NewParser(
+		jwt.WithValidMethods(j.config.AllowedAlgs),
+		jwt.WithIssuer(j.config.Issuer),
+		jwt.WithIssuedAt(),
+		jwt.WithExpirationRequired(),
+	)
+
+	claims, err := j.parseClaims(parser, token, key)
+	if err != nil {
+		return nil, err
+	}
+
+	return claims, nil
+}
+
+func (j *jwtUtil) parseClaims(parser *jwt.Parser, token, key string) (*JWTClaims, error) {
 	parsedToken, err := parser.ParseWithClaims(
 		token,
 		&JWTClaims{},
 		func(t *jwt.Token) (interface{}, error) {
-			return []byte(j.config.SecretKey), nil
+			return []byte(key), nil
 		},
 	)
 	if err != nil || !parsedToken.Valid {
 		return nil, err
 	}
 
+	// TODO: change to unauthorized error
 	claims, ok := parsedToken.Claims.(*JWTClaims)
 	if !ok {
 		return nil, errors.New("invalid claims type")

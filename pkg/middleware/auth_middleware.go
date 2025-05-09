@@ -18,7 +18,7 @@ func AuthMiddleware(jwt jwtutil.JWTUtil, allowedRoles ...string) gin.HandlerFunc
 			return
 		}
 
-		claims, err := jwt.Parse(accessToken)
+		claims, err := jwt.ParseAccess(accessToken)
 		if err != nil {
 			ctx.Error(err)
 			ctx.Abort()
@@ -31,6 +31,7 @@ func AuthMiddleware(jwt jwtutil.JWTUtil, allowedRoles ...string) gin.HandlerFunc
 			return
 		}
 
+		// TODO: change to forbidden error
 		if !isRoleAllowed(claims.Role, allowedRoles...) {
 			ctx.Error(httperror.NewUnauthorizedError())
 			ctx.Abort()
