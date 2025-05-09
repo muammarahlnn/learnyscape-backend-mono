@@ -42,7 +42,7 @@ func (p *Password) Validate() bool {
 		}
 	}
 
-	if p.hasMinLen || p.hasUpper || p.hasLower || p.hasNumber || p.hasSpecialCharacter {
+	if !p.hasMinLen || !p.hasUpper || !p.hasLower || !p.hasNumber || !p.hasSpecialCharacter {
 		p.setMessage()
 		return false
 	}
@@ -52,7 +52,6 @@ func (p *Password) Validate() bool {
 
 func (p *Password) setMessage() {
 	var s strings.Builder
-	s.WriteString("invalid password: ")
 
 	if !p.hasMinLen {
 		s.WriteString("min 8 characters, ")
