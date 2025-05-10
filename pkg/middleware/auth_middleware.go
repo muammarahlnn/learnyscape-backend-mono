@@ -31,9 +31,8 @@ func AuthMiddleware(jwt jwtutil.JWTUtil, allowedRoles ...string) gin.HandlerFunc
 			return
 		}
 
-		// TODO: change to forbidden error
 		if !isRoleAllowed(claims.Role, allowedRoles...) {
-			ctx.Error(httperror.NewUnauthorizedError())
+			ctx.Error(httperror.NewForbiddenError())
 			ctx.Abort()
 			return
 		}

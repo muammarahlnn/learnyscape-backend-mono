@@ -9,4 +9,5 @@ const (
 	RequestTimeoutErrorMessage     = "failed to process request in time, please try again"
 	RequestCanceledErrorMessage    = "request canceled by client, please try again"
 	UnauthorizedErrorMessage       = "unauthorized"
+	ForbiddenErrorMessage          = "only accessible by certain user"
 )
