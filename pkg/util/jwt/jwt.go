@@ -1,8 +1,8 @@
 package jwtutil
 
 import (
-	"errors"
 	"learnyscape-backend-mono/pkg/config"
+	"learnyscape-backend-mono/pkg/httperror"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -128,27 +128,26 @@ func (j *jwtUtil) parseClaims(parser *jwt.Parser, token, key string) (*JWTClaims
 		return nil, err
 	}
 
-	// TODO: change to unauthorized error
 	claims, ok := parsedToken.Claims.(*JWTClaims)
 	if !ok {
-		return nil, errors.New("invalid claims type")
+		return nil, httperror.NewUnauthorizedError()
 	}
 
 	currentTime := time.Now()
 	if claims.ExpiresAt.Time.Before(currentTime) {
-		return nil, errors.New("token expired")
+		return nil, httperror.NewUnauthorizedError()
 	}
 	if claims.Issuer != j.config.Issuer {
-		return nil, errors.New("invalid issuer")
+		return nil, httperror.NewUnauthorizedError()
 	}
 	if claims.IssuedAt.Time.After(currentTime) {
-		return nil, errors.New("token not yet valid")
+		return nil, httperror.NewUnauthorizedError()
 	}
 	if claims.UserID == 0 {
-		return nil, errors.New("invalid user id")
+		return nil, httperror.NewUnauthorizedError()
 	}
 	if claims.Role == "" {
-		return nil, errors.New("invalid role")
+		return nil, httperror.NewUnauthorizedError()
 	}
 
 	return claims, nil
