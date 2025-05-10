@@ -20,7 +20,7 @@ func AuthMiddleware(jwt jwtutil.JWTUtil, allowedRoles ...string) gin.HandlerFunc
 
 		claims, err := jwt.ParseAccess(accessToken)
 		if err != nil {
-			ctx.Error(err)
+			ctx.Error(httperror.NewUnauthorizedError())
 			ctx.Abort()
 			return
 		}
