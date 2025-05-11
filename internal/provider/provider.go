@@ -8,10 +8,12 @@ import (
 	jwtutil "learnyscape-backend-mono/pkg/util/jwt"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/redis/go-redis/v9"
 )
 
 var (
 	db           *sqlx.DB
+	rdb          *redis.Client
 	dataStore    data.DataStore
 	jwtUtil      jwtutil.JWTUtil
 	bcryptHasher encryptutil.Hasher
@@ -19,6 +21,7 @@ var (
 
 func BootstrapGlobal(cfg *config.Config) {
 	db = database.NewPostgres((*database.PostgresOptions)(cfg.Postgres))
+	rdb = database.NewRedis((*database.RedisOptions)(cfg.Redis))
 	dataStore = data.NewDataStore(db)
 	jwtUtil = jwtutil.NewJWTUtil()
 	bcryptHasher = encryptutil.NewBcryptHasher(cfg.App.BCryptCost)
