@@ -14,6 +14,7 @@ import (
 var (
 	db           *sqlx.DB
 	rdb          *redis.Client
+	redisClient  data.RedisClient
 	dataStore    data.DataStore
 	jwtUtil      jwtutil.JWTUtil
 	bcryptHasher encryptutil.Hasher
@@ -22,6 +23,7 @@ var (
 func BootstrapGlobal(cfg *config.Config) {
 	db = database.NewPostgres((*database.PostgresOptions)(cfg.Postgres))
 	rdb = database.NewRedis((*database.RedisOptions)(cfg.Redis))
+	redisClient = data.NewRedisClient(rdb)
 	dataStore = data.NewDataStore(db)
 	jwtUtil = jwtutil.NewJWTUtil()
 	bcryptHasher = encryptutil.NewBcryptHasher(cfg.App.BCryptCost)
