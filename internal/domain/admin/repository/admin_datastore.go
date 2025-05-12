@@ -1,17 +1,17 @@
 package repository
 
-import "learnyscape-backend-mono/internal/data"
+import "learnyscape-backend-mono/internal/shared/datastore"
 
 type AdminDataStore interface {
-	data.DataStore
+	datastore.DataStore
 	RoleRepository() RoleRepository
 }
 
 type adminDataStore struct {
-	data.DataStore
+	datastore.DataStore
 }
 
-func NewAdminDataStore(ds data.DataStore) AdminDataStore {
+func NewAdminDataStore(ds datastore.DataStore) AdminDataStore {
 	return &adminDataStore{
 		DataStore: ds,
 	}

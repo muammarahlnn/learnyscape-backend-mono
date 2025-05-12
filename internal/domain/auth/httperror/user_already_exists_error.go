@@ -2,7 +2,7 @@ package httperror
 
 import (
 	"errors"
-	"learnyscape-backend-mono/internal/auth/constant"
+	"learnyscape-backend-mono/internal/domain/auth/constant"
 	"learnyscape-backend-mono/pkg/httperror"
 	"net/http"
 )

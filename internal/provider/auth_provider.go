@@ -1,9 +1,9 @@
 package provider
 
 import (
-	"learnyscape-backend-mono/internal/auth/handler"
-	"learnyscape-backend-mono/internal/auth/repository"
-	"learnyscape-backend-mono/internal/auth/service"
+	"learnyscape-backend-mono/internal/domain/auth/handler"
+	"learnyscape-backend-mono/internal/domain/auth/repository"
+	"learnyscape-backend-mono/internal/domain/auth/service"
 
 	"github.com/gin-gonic/gin"
 )

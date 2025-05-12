@@ -1,7 +1,7 @@
 package dto
 
 import (
-	"learnyscape-backend-mono/internal/auth/entity"
+	"learnyscape-backend-mono/internal/domain/auth/entity"
 	"time"
 )
 

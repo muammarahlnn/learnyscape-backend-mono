@@ -2,8 +2,8 @@ package service
 
 import (
 	"context"
-	"learnyscape-backend-mono/internal/admin/dto"
-	"learnyscape-backend-mono/internal/admin/repository"
+	"learnyscape-backend-mono/internal/domain/admin/dto"
+	"learnyscape-backend-mono/internal/domain/admin/repository"
 )
 
 type AdminService interface {

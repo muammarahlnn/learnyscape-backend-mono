@@ -2,10 +2,10 @@ package service
 
 import (
 	"context"
-	"learnyscape-backend-mono/internal/auth/dto"
-	"learnyscape-backend-mono/internal/auth/entity"
-	"learnyscape-backend-mono/internal/auth/httperror"
-	"learnyscape-backend-mono/internal/auth/repository"
+	"learnyscape-backend-mono/internal/domain/auth/dto"
+	"learnyscape-backend-mono/internal/domain/auth/entity"
+	"learnyscape-backend-mono/internal/domain/auth/httperror"
+	"learnyscape-backend-mono/internal/domain/auth/repository"
 	encryptutil "learnyscape-backend-mono/pkg/util/encrypt"
 	jwtutil "learnyscape-backend-mono/pkg/util/jwt"
 )

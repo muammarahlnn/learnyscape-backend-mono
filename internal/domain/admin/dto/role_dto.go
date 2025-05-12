@@ -1,6 +1,6 @@
 package dto
 
-import "learnyscape-backend-mono/internal/admin/entity"
+import "learnyscape-backend-mono/internal/domain/admin/entity"
 
 type RoleResponse struct {
 	ID   int64  `json:"id"`

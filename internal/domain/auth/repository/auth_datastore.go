@@ -2,27 +2,27 @@ package repository
 
 import (
 	"context"
-	"learnyscape-backend-mono/internal/data"
+	"learnyscape-backend-mono/internal/shared/datastore"
 )
 
 type AuthDataStore interface {
-	data.DataStore
+	datastore.DataStore
 	Atomic(ctx context.Context, fn func(AuthDataStore) error) error
 	UserRepository() UserRepository
 }
 
 type authDataStore struct {
-	data.DataStore
+	datastore.DataStore
 }
 
-func NewAuthDataStore(ds data.DataStore) AuthDataStore {
+func NewAuthDataStore(ds datastore.DataStore) AuthDataStore {
 	return &authDataStore{
 		DataStore: ds,
 	}
 }
 
 func (ds *authDataStore) Atomic(ctx context.Context, fn func(AuthDataStore) error) error {
-	return data.Atomic(ctx, ds.DataStore, NewAuthDataStore, fn)
+	return datastore.Atomic(ctx, ds.DataStore, NewAuthDataStore, fn)
 }
 
 func (ds *authDataStore) UserRepository() UserRepository {

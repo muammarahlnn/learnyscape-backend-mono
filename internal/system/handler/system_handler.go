@@ -17,6 +17,7 @@ func NewSystemHandler() *SystemHandler {
 func (h *SystemHandler) Route(r *gin.Engine) {
 	r.NoRoute(h.routeNotFound)
 	r.NoMethod(h.methodNotAllowed)
+	r.GET("/ping", h.ping)
 }
 
 func (h *SystemHandler) routeNotFound(ctx *gin.Context) {
@@ -33,6 +34,15 @@ func (h *SystemHandler) methodNotAllowed(ctx *gin.Context) {
 		http.StatusOK,
 		dto.WebResponse[any]{
 			Message: "method not allowed",
+		},
+	)
+}
+
+func (h *SystemHandler) ping(ctx *gin.Context) {
+	ctx.JSON(
+		http.StatusOK,
+		dto.WebResponse[any]{
+			Message: "pong",
 		},
 	)
 }

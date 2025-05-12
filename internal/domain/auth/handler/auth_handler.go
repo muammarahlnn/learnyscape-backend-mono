@@ -1,8 +1,8 @@
 package handler
 
 import (
-	"learnyscape-backend-mono/internal/auth/dto"
-	"learnyscape-backend-mono/internal/auth/service"
+	"learnyscape-backend-mono/internal/domain/auth/dto"
+	"learnyscape-backend-mono/internal/domain/auth/service"
 	ginutil "learnyscape-backend-mono/pkg/util/gin"
 
 	"github.com/gin-gonic/gin"

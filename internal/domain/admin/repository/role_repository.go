@@ -2,8 +2,8 @@ package repository
 
 import (
 	"context"
-	"learnyscape-backend-mono/internal/admin/entity"
-	"learnyscape-backend-mono/internal/data"
+	"learnyscape-backend-mono/internal/domain/admin/entity"
+	"learnyscape-backend-mono/internal/shared/datastore"
 )
 
 type RoleRepository interface {
@@ -11,10 +11,10 @@ type RoleRepository interface {
 }
 
 type roleRepositoryImpl struct {
-	db data.DBTX
+	db datastore.DBTX
 }
 
-func NewRoleRepository(db data.DBTX) RoleRepository {
+func NewRoleRepository(db datastore.DBTX) RoleRepository {
 	return &roleRepositoryImpl{
 		db: db,
 	}

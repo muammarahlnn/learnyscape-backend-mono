@@ -2,7 +2,8 @@ package provider
 
 import (
 	"learnyscape-backend-mono/internal/config"
-	"learnyscape-backend-mono/internal/data"
+	"learnyscape-backend-mono/internal/shared/datastore"
+	redisx "learnyscape-backend-mono/internal/shared/redis"
 	"learnyscape-backend-mono/pkg/database"
 	encryptutil "learnyscape-backend-mono/pkg/util/encrypt"
 	jwtutil "learnyscape-backend-mono/pkg/util/jwt"
@@ -14,8 +15,8 @@ import (
 var (
 	db           *sqlx.DB
 	rdb          *redis.Client
-	redisClient  data.RedisClient
-	dataStore    data.DataStore
+	redisClient  redisx.RedisClient
+	dataStore    datastore.DataStore
 	jwtUtil      jwtutil.JWTUtil
 	bcryptHasher encryptutil.Hasher
 )
@@ -23,8 +24,8 @@ var (
 func BootstrapGlobal(cfg *config.Config) {
 	db = database.NewPostgres((*database.PostgresOptions)(cfg.Postgres))
 	rdb = database.NewRedis((*database.RedisOptions)(cfg.Redis))
-	redisClient = data.NewRedisClient(rdb)
-	dataStore = data.NewDataStore(db)
+	redisClient = redisx.NewRedisClient(rdb)
+	dataStore = datastore.NewDataStore(db)
 	jwtUtil = jwtutil.NewJWTUtil()
 	bcryptHasher = encryptutil.NewBcryptHasher(cfg.App.BCryptCost)
 }

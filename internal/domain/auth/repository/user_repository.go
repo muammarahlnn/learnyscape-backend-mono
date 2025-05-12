@@ -4,8 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"learnyscape-backend-mono/internal/auth/entity"
-	"learnyscape-backend-mono/internal/data"
+	"learnyscape-backend-mono/internal/domain/auth/entity"
+	"learnyscape-backend-mono/internal/shared/datastore"
 )
 
 type UserRepository interface {
@@ -14,10 +14,10 @@ type UserRepository interface {
 }
 
 type userRepositoryImpl struct {
-	db data.DBTX
+	db datastore.DBTX
 }
 
-func NewUserRepository(db data.DBTX) UserRepository {
+func NewUserRepository(db datastore.DBTX) UserRepository {
 	return &userRepositoryImpl{
 		db: db,
 	}

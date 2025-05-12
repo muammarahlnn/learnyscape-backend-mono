@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"learnyscape-backend-mono/internal/admin/service"
+	"learnyscape-backend-mono/internal/domain/admin/service"
 	ginutil "learnyscape-backend-mono/pkg/util/gin"
 
 	"github.com/gin-gonic/gin"
