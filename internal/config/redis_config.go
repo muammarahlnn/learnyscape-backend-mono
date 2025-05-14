@@ -7,15 +7,16 @@ import (
 )
 
 type RedisConfig struct {
-	Addr            string `mapstructure:"REDIS_ADDR"`
-	Password        string `mapstructure:"REDIS_PASSWORD"`
-	DialTimeout     int    `mapstructure:"REDIS_DIAL_TIMEOUT"`
-	ReadTimeout     int    `mapstructure:"REDIS_READ_TIMEOUT"`
-	WriteTimeout    int    `mapstructure:"REDIS_WRITE_TIMEOUT"`
-	MinIdleConn     int    `mapstructure:"REDIS_MIN_IDLE_CONN"`
-	MaxIdleConn     int    `mapstructure:"REDIS_MAX_IDLE_CONN"`
-	MaxActiveConn   int    `mapstructure:"REDIS_MAX_ACTIVE_CONN"`
-	MaxConnLifetime int    `mapstructure:"REDIS_MAX_CONN_LIFETIME"`
+	Addr                   string `mapstructure:"REDIS_ADDR"`
+	Password               string `mapstructure:"REDIS_PASSWORD"`
+	DialTimeout            int    `mapstructure:"REDIS_DIAL_TIMEOUT"`
+	ReadTimeout            int    `mapstructure:"REDIS_READ_TIMEOUT"`
+	WriteTimeout           int    `mapstructure:"REDIS_WRITE_TIMEOUT"`
+	MinIdleConn            int    `mapstructure:"REDIS_MIN_IDLE_CONN"`
+	MaxIdleConn            int    `mapstructure:"REDIS_MAX_IDLE_CONN"`
+	MaxActiveConn          int    `mapstructure:"REDIS_MAX_ACTIVE_CONN"`
+	MaxConnLifetime        int    `mapstructure:"REDIS_MAX_CONN_LIFETIME"`
+	RefreshTokenExpiration int    `mapstructure:"JWT_REFRESH_TOKEN_DURATION"`
 }
 
 func initRedisConfig() *RedisConfig {
