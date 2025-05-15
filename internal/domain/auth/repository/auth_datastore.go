@@ -7,7 +7,7 @@ import (
 
 type AuthDataStore interface {
 	datastore.DataStore
-	Atomic(ctx context.Context, fn func(AuthDataStore) error) error
+	WithinTx(ctx context.Context, fn func(AuthDataStore) error) error
 	UserRepository() UserRepository
 }
 
@@ -21,8 +21,8 @@ func NewAuthDataStore(ds datastore.DataStore) AuthDataStore {
 	}
 }
 
-func (ds *authDataStore) Atomic(ctx context.Context, fn func(AuthDataStore) error) error {
-	return datastore.Atomic(ctx, ds.DataStore, NewAuthDataStore, fn)
+func (ds *authDataStore) WithinTx(ctx context.Context, fn func(AuthDataStore) error) error {
+	return datastore.WithinTx(ctx, ds.DataStore, NewAuthDataStore, fn)
 }
 
 func (ds *authDataStore) UserRepository() UserRepository {

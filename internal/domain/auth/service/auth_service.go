@@ -96,7 +96,7 @@ func (s *authServiceImpl) Login(ctx context.Context, req *dto.LoginRequest) (*dt
 
 func (s *authServiceImpl) Register(ctx context.Context, req *dto.RegisterRequest) (*dto.RegisterResponse, error) {
 	var res *dto.RegisterResponse
-	err := s.dataStore.Atomic(ctx, func(ds repository.AuthDataStore) error {
+	err := s.dataStore.WithinTx(ctx, func(ds repository.AuthDataStore) error {
 		userRepo := ds.UserRepository()
 
 		user, err := userRepo.FindByIdentifier(ctx, req.Username)

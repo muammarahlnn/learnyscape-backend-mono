@@ -36,16 +36,15 @@ func (s *dataStore) DB() DBTX {
 	return s.db
 }
 
-func (s *dataStore) atomic(ctx context.Context, fn func(DataStore) error) error {
+func (s *dataStore) withinTx(ctx context.Context, fn func(DataStore) error) error {
 	tx, err := s.conn.BeginTxx(ctx, &sql.TxOptions{})
 	if err != nil {
 		return err
 	}
 
-	err = fn(&dataStore{conn: s.conn, db: tx})
-	if err != nil {
+	if err := fn(&dataStore{conn: s.conn, db: tx}); err != nil {
 		if rbErr := tx.Rollback(); rbErr != nil {
-			return err
+			return rbErr
 		}
 		return err
 	}
@@ -57,13 +56,13 @@ func (s *dataStore) atomic(ctx context.Context, fn func(DataStore) error) error 
 	return nil
 }
 
-func Atomic[T any](ctx context.Context, baseDs DataStore, wrap func(DataStore) T, handler func(T) error) error {
+func WithinTx[T any](ctx context.Context, baseDs DataStore, wrap func(DataStore) T, handler func(T) error) error {
 	ds, ok := baseDs.(*dataStore)
 	if !ok {
 		panic(fmt.Sprintf("baseDs is not a dataStore: %T", baseDs))
 	}
 
-	return ds.atomic(ctx, func(ds DataStore) error {
+	return ds.withinTx(ctx, func(ds DataStore) error {
 		domainDs := wrap(ds)
 		if err := handler(domainDs); err != nil {
 			return err
