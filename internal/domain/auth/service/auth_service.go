@@ -2,12 +2,19 @@ package service
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"learnyscape-backend-mono/internal/domain/auth/constant"
 	"learnyscape-backend-mono/internal/domain/auth/dto"
 	"learnyscape-backend-mono/internal/domain/auth/entity"
 	"learnyscape-backend-mono/internal/domain/auth/httperror"
 	"learnyscape-backend-mono/internal/domain/auth/repository"
+	redisx "learnyscape-backend-mono/internal/shared/redis"
 	encryptutil "learnyscape-backend-mono/pkg/util/encrypt"
 	jwtutil "learnyscape-backend-mono/pkg/util/jwt"
+	"time"
+
+	"github.com/redis/go-redis/v9"
 )
 
 type AuthService interface {
@@ -17,20 +24,26 @@ type AuthService interface {
 }
 
 type authServiceImpl struct {
-	dataStore repository.AuthDataStore
-	hasher    encryptutil.Hasher
-	jwt       jwtutil.JWTUtil
+	dataStore       repository.AuthDataStore
+	hasher          encryptutil.Hasher
+	jwt             jwtutil.JWTUtil
+	redis           redisx.RedisClient
+	refreshTokenTTL time.Duration
 }
 
 func NewAuthService(
-	ds repository.AuthDataStore,
+	datastore repository.AuthDataStore,
 	hasher encryptutil.Hasher,
 	jwt jwtutil.JWTUtil,
+	redis redisx.RedisClient,
+	refreshTokenTTL time.Duration,
 ) AuthService {
 	return &authServiceImpl{
-		dataStore: ds,
-		hasher:    hasher,
-		jwt:       jwt,
+		dataStore:       datastore,
+		hasher:          hasher,
+		jwt:             jwt,
+		redis:           redis,
+		refreshTokenTTL: refreshTokenTTL,
 	}
 }
 
@@ -67,6 +80,19 @@ func (s *authServiceImpl) Login(ctx context.Context, req *dto.LoginRequest) (*dt
 			return err
 		}
 		res.RefreshToken = refreshToken
+
+		refreshClaims, err := s.jwt.ParseRefresh(refreshToken)
+		if err != nil {
+			return err
+		}
+		if err := s.redis.Set(
+			ctx,
+			fmt.Sprintf(constant.RefreshTokenKey, refreshClaims.ID),
+			user.ID,
+			s.refreshTokenTTL,
+		); err != nil {
+			return err
+		}
 
 		return nil
 	})
@@ -139,6 +165,19 @@ func (s *authServiceImpl) Refresh(ctx context.Context, req *dto.RefreshRequest) 
 		return nil, httperror.NewInvalidRefreshTokenError()
 	}
 
+	refreshTokenKey := fmt.Sprintf(constant.RefreshTokenKey, claims.ID)
+	userID, err := s.redis.Get(ctx, refreshTokenKey)
+	if err != nil {
+		if errors.Is(err, redis.Nil) {
+			return nil, httperror.NewInvalidRefreshTokenError()
+		}
+		return nil, err
+	}
+
+	if err := s.redis.Delete(ctx, refreshTokenKey); err != nil {
+		return nil, err
+	}
+
 	payload := &jwtutil.JWTPayload{
 		UserID: claims.UserID,
 		Role:   claims.Role,
@@ -148,9 +187,28 @@ func (s *authServiceImpl) Refresh(ctx context.Context, req *dto.RefreshRequest) 
 		return nil, err
 	}
 
+	refreshToken, err := s.jwt.SignRefresh(payload)
+	if err != nil {
+		return nil, err
+	}
+
+	newClaims, err := s.jwt.ParseRefresh(refreshToken)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := s.redis.Set(
+		ctx,
+		fmt.Sprintf(constant.RefreshTokenKey, newClaims.ID),
+		userID,
+		s.refreshTokenTTL,
+	); err != nil {
+		return nil, err
+	}
+
 	res := &dto.LoginResponse{
 		AccessToken:  accessToken,
-		RefreshToken: req.RefreshToken,
+		RefreshToken: refreshToken,
 	}
 	return res, nil
 }
