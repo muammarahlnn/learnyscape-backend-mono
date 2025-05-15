@@ -8,7 +8,10 @@ import (
 	"github.com/spf13/viper"
 )
 
-var JwtConfig *JWTConfig
+var (
+	JwtConfig  *JWTConfig
+	SmtpConfig *SMTPConfig
+)
 
 func init() {
 	configPath := parseConfigPath()
@@ -21,6 +24,7 @@ func init() {
 	}
 
 	JwtConfig = initJWTConfig()
+	SmtpConfig = initSMTPConfig()
 }
 
 func parseConfigPath() string {
