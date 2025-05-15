@@ -48,59 +48,50 @@ func NewAuthService(
 }
 
 func (s *authServiceImpl) Login(ctx context.Context, req *dto.LoginRequest) (*dto.LoginResponse, error) {
-	res := &dto.LoginResponse{}
-	err := s.dataStore.Atomic(ctx, func(ds repository.AuthDataStore) error {
-		userRepo := ds.UserRepository()
+	user, err := s.dataStore.UserRepository().FindByIdentifier(ctx, req.Identifier)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, httperror.NewInvalidCredentialError()
+	}
 
-		user, err := userRepo.FindByIdentifier(ctx, req.Identifier)
-		if err != nil {
-			return err
-		}
-		if user == nil {
-			return httperror.NewInvalidCredentialError()
-		}
+	if ok := s.hasher.Check(req.Password, user.HashPassword); !ok {
+		return nil, httperror.NewInvalidCredentialError()
+	}
 
-		if ok := s.hasher.Check(req.Password, user.HashPassword); !ok {
-			return httperror.NewInvalidCredentialError()
-		}
+	jwtPayload := &jwtutil.JWTPayload{
+		UserID: user.ID,
+		Role:   user.Role,
+	}
 
-		jwtPayload := &jwtutil.JWTPayload{
-			UserID: user.ID,
-			Role:   user.Role,
-		}
-
-		accessToken, err := s.jwt.SignAccess(jwtPayload)
-		if err != nil {
-			return err
-		}
-		res.AccessToken = accessToken
-
-		refreshToken, err := s.jwt.SignRefresh(jwtPayload)
-		if err != nil {
-			return err
-		}
-		res.RefreshToken = refreshToken
-
-		refreshClaims, err := s.jwt.ParseRefresh(refreshToken)
-		if err != nil {
-			return err
-		}
-		if err := s.redis.Set(
-			ctx,
-			fmt.Sprintf(constant.RefreshTokenKey, refreshClaims.ID),
-			user.ID,
-			s.refreshTokenTTL,
-		); err != nil {
-			return err
-		}
-
-		return nil
-	})
+	accessToken, err := s.jwt.SignAccess(jwtPayload)
 	if err != nil {
 		return nil, err
 	}
 
-	return res, nil
+	refreshToken, err := s.jwt.SignRefresh(jwtPayload)
+	if err != nil {
+		return nil, err
+	}
+
+	refreshClaims, err := s.jwt.ParseRefresh(refreshToken)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.redis.Set(
+		ctx,
+		fmt.Sprintf(constant.RefreshTokenKey, refreshClaims.ID),
+		user.ID,
+		s.refreshTokenTTL,
+	); err != nil {
+		return nil, err
+	}
+
+	return &dto.LoginResponse{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+	}, nil
 }
 
 func (s *authServiceImpl) Register(ctx context.Context, req *dto.RegisterRequest) (*dto.RegisterResponse, error) {
@@ -206,9 +197,8 @@ func (s *authServiceImpl) Refresh(ctx context.Context, req *dto.RefreshRequest) 
 		return nil, err
 	}
 
-	res := &dto.LoginResponse{
+	return &dto.LoginResponse{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
-	}
-	return res, nil
+	}, nil
 }
