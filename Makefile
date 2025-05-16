@@ -1,16 +1,15 @@
-include ${CURDIR}/.env
+include ${CURDIR}/{env}
 
 migratecreate:
-	@migrate create -ext sql -dir ${CURDIR}/db/migrations/ -seq ${name}
+	@migrate create -ext sql -dir ${CURDIR}/db/migration/ -seq ${name}
 
 migrateforce:
-	@migrate -path ${CURDIR}/db/migrations/ -database "postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=${DB_SSL_MODE}" -verbose force 1
+	@migrate -path ${CURDIR}/db/migration/ -database "postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=${DB_SSL_MODE}" -verbose force 1
 
 migratedown:
-	@migrate -path ${CURDIR}/db/migrations/ -database "postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=${DB_SSL_MODE}" -verbose down
+	@migrate -path ${CURDIR}/db/migration/ -database "postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=${DB_SSL_MODE}" -verbose down
 
 migrateup:
-	@migrate -path ${CURDIR}/db/migrations/ -database "postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=${DB_SSL_MODE}" -verbose up
-
+	@migrate -path ${CURDIR}/db/migration/ -database "postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=${DB_SSL_MODE}" -verbose up
 logs:
 	@docker container logs learnyscape-mono-backend

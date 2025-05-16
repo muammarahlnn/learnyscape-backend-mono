@@ -25,6 +25,7 @@ tmp/
 
 # .env file
 .env
+.env.local
 bin
 
 # project build
