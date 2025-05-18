@@ -1,19 +1,22 @@
 include ${CURDIR}/.env
 
-migratecreate:
+migrate_create:
 	@migrate create -ext sql -dir ${CURDIR}/db/migration/ -seq ${name}
 
-migrateforce:
+migrate_force:
 	@migrate -path ${CURDIR}/db/migration/ -database "${MIGRATE_DB_URL}" -verbose force 1
 
-migratedown:
+migrate_down:
 	@migrate -path ${CURDIR}/db/migration/ -database "${MIGRATE_DB_URL}" -verbose down
 
-migrateup:
+migrate_down_one:
+	@migrate -path ${CURDIR}/db/migration/ -database "${MIGRATE_DB_URL}" -verbose down 1
+
+migrate_up:
 	@migrate -path ${CURDIR}/db/migration/ -database "${MIGRATE_DB_URL}" -verbose up
 
 logs:
 	@docker container logs learnyscape-mono-backend
 
-compose-up:
+up:
 	@docker compose up -d --build
