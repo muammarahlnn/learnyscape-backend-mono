@@ -14,3 +14,6 @@ migrateup:
 
 logs:
 	@docker container logs learnyscape-mono-backend
+
+compose-up:
+	@docker compose up -d --build

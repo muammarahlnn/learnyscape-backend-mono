@@ -42,6 +42,14 @@ services:
     volumes:
       - redis_data:/data
     restart: unless-stopped
+    
+  mailhog:
+    container_name: learnyscape-mono-mailhog
+    image: "mailhog/mailhog:latest"
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    restart: always
 
 volumes:
   redis_data:
