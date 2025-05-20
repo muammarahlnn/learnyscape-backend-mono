@@ -51,5 +51,18 @@ services:
       - "8025:8025"
     restart: always
 
+  rabbitmq:
+    container_name: learnyscape-mono-rabbitmq
+    image: "rabbitmq:4.0-management"
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+    env_file:
+      - .env
+    environment:
+      RABBITMQ_DEFAULT_USER: ${AMQP_USERNAME}
+      RABBITMQ_DEFAULT_PASS: ${AMQP_PASSWORD}
+    restart: unless-stopped
+
 volumes:
   redis_data:
