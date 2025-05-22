@@ -14,13 +14,13 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-type SendVerificationPublisher struct {
+type AccountVerifiedPublisher struct {
 	Channel  *amqp.Channel
 	exchange string
 }
 
-func NewSendVerificationPublisher(conn *amqp.Connection) mq.AMQPPublisher {
-	exchange := constant.SendVerificationExchange
+func NewAccountVerifiedPublisher(conn *amqp.Connection) mq.AMQPPublisher {
+	exchange := constant.AccountVerifiedExchange
 	ch, err := conn.Channel()
 	if err != nil {
 		log.Logger.Fatalf("failed to open a channel: %s", err)
@@ -32,13 +32,13 @@ func NewSendVerificationPublisher(conn *amqp.Connection) mq.AMQPPublisher {
 		}
 	}
 
-	return &SendVerificationPublisher{
+	return &AccountVerifiedPublisher{
 		Channel:  ch,
 		exchange: exchange,
 	}
 }
 
-func (p *SendVerificationPublisher) Publish(ctx context.Context, event mq.AMQPEvent) error {
+func (p *AccountVerifiedPublisher) Publish(ctx context.Context, event mq.AMQPEvent) error {
 	bytes, err := sonic.Marshal(event)
 	if err != nil {
 		return fmt.Errorf("failed to marshal event: %w", err)
@@ -71,6 +71,6 @@ func (p *SendVerificationPublisher) Publish(ctx context.Context, event mq.AMQPEv
 	return err
 }
 
-func (p *SendVerificationPublisher) Exchange() string {
+func (p AccountVerifiedPublisher) Exchange() string {
 	return p.exchange
 }

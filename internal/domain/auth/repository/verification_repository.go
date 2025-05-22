@@ -8,6 +8,8 @@ import (
 
 type VerificationRepository interface {
 	Create(ctx context.Context, params *entity.CreateVerificationsParams) (*entity.Verification, error)
+	FindByUserID(ctx context.Context, userId int64) (*entity.Verification, error)
+	DeleteByID(ctx context.Context, id int64) error
 }
 
 type verificationRepositoryImpl struct {
@@ -58,4 +60,53 @@ func (r *verificationRepositoryImpl) Create(ctx context.Context, params *entity.
 	}
 
 	return &verification, nil
+}
+
+func (r *verificationRepositoryImpl) FindByUserID(ctx context.Context, userId int64) (*entity.Verification, error) {
+	query := `
+	SELECT
+		id,
+		user_id,
+		token,
+		expire_at,
+		created_at,
+		updated_at
+	FROM
+		user_verifications
+	WHERE
+		user_id = $1
+		AND deleted_at IS NULL
+	`
+
+	var verification entity.Verification
+	if err := r.db.QueryRowContext(ctx, query, userId).Scan(
+		&verification.ID,
+		&verification.UserID,
+		&verification.Token,
+		&verification.ExpireAt,
+		&verification.CreatedAt,
+		&verification.UpdatedAt,
+	); err != nil {
+		return nil, err
+	}
+
+	return &verification, nil
+}
+
+func (r *verificationRepositoryImpl) DeleteByID(ctx context.Context, id int64) error {
+	query := `
+	UPDATE
+		user_verifications
+	SET
+		deleted_at = NOW()
+	WHERE
+		id = $1
+		AND deleted_at IS NULL
+	`
+
+	if _, err := r.db.ExecContext(ctx, query, id); err != nil {
+		return err
+	}
+
+	return nil
 }

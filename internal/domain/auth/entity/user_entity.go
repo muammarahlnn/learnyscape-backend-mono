@@ -10,6 +10,7 @@ type User struct {
 	FullName      string
 	ProfilePicURL *string
 	Role          string
+	IsVerified    bool
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 }

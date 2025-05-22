@@ -17,17 +17,17 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-type SendVerificationConsumer struct {
+type AccountVerifiedConsumer struct {
 	channel *amqp.Channel
 	mailer  smtputil.Mailer
 	queue   string
 	wg      *sync.WaitGroup
 }
 
-func NewSendVerificationConsumer(conn *amqp.Connection, mailer smtputil.Mailer) mq.AMQPConsumer {
-	queue := authconstant.SendVerificationQueue
-	key := authconstant.SendVerificationKey
-	exchange := authconstant.SendVerificationExchange
+func NewAccountVerifiedConsumer(conn *amqp.Connection, mailer smtputil.Mailer) mq.AMQPConsumer {
+	queue := authconstant.AccountVerifiedQueue
+	key := authconstant.AccountVerifiedKey
+	exchange := authconstant.AccountVerifiedExchange
 
 	ch, err := conn.Channel()
 	if err != nil {
@@ -55,7 +55,7 @@ func NewSendVerificationConsumer(conn *amqp.Connection, mailer smtputil.Mailer) 
 		log.Logger.Fatalf("failed to bind a queue: %v", err)
 	}
 
-	return &SendVerificationConsumer{
+	return &AccountVerifiedConsumer{
 		channel: ch,
 		mailer:  mailer,
 		queue:   queue,
@@ -63,7 +63,7 @@ func NewSendVerificationConsumer(conn *amqp.Connection, mailer smtputil.Mailer) 
 	}
 }
 
-func (c *SendVerificationConsumer) Consume(ctx context.Context, nWorker int) error {
+func (c *AccountVerifiedConsumer) Consume(ctx context.Context, nWorker int) error {
 	for i := 1; i <= nWorker; i++ {
 		c.wg.Add(1)
 		go c.Start(ctx, i)
@@ -72,7 +72,7 @@ func (c *SendVerificationConsumer) Consume(ctx context.Context, nWorker int) err
 	return nil
 }
 
-func (c *SendVerificationConsumer) Start(ctx context.Context, workerID int) {
+func (c *AccountVerifiedConsumer) Start(ctx context.Context, workerID int) {
 	defer c.wg.Done()
 
 	msgs, err := c.channel.ConsumeWithContext(
@@ -121,28 +121,28 @@ func (c *SendVerificationConsumer) Start(ctx context.Context, workerID int) {
 	}
 }
 
-func (c *SendVerificationConsumer) Handler() mq.AMQPHandler {
+func (c *AccountVerifiedConsumer) Handler() mq.AMQPHandler {
 	return func(ctx context.Context, body []byte) error {
-		var event dto.SendVerificationEvent
+		var event dto.AccountVerifiedEvent
 		if err := sonic.Unmarshal(body, &event); err != nil {
-			log.Logger.Errorf("failed to unmarshal message: %s", err)
+			log.Logger.Errorf("failed to unmarshal event: %s", err)
 			return err
 		}
 
 		return c.mailer.SendMail(
 			ctx,
 			event.Email,
-			constant.SendVerificationSubject,
-			fmt.Sprintf(constant.SendVerificationTemplate, event.Name, event.Token),
+			constant.AccountVerifiedSubject,
+			fmt.Sprintf(constant.AccountVerifiedTemplate, event.Name),
 		)
 	}
 }
 
-func (c *SendVerificationConsumer) Queue() string {
+func (c *AccountVerifiedConsumer) Queue() string {
 	return c.queue
 }
 
-func (c *SendVerificationConsumer) Close() error {
+func (c *AccountVerifiedConsumer) Close() error {
 	log.Logger.Infof("Closing consumer for queue: %s", c.Queue())
 	c.wg.Wait()
 	return c.channel.Close()

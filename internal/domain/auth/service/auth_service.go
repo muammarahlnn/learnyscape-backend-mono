@@ -24,6 +24,7 @@ type AuthService interface {
 	Login(ctx context.Context, req *dto.LoginRequest) (*dto.LoginResponse, error)
 	Register(ctx context.Context, req *dto.RegisterRequest) (*dto.RegisterResponse, error)
 	Refresh(ctx context.Context, req *dto.RefreshRequest) (*dto.LoginResponse, error)
+	Verify(ctx context.Context, req *dto.VerificationRequest) (*dto.VerificationResponse, error)
 }
 
 type authServiceImpl struct {
@@ -33,6 +34,7 @@ type authServiceImpl struct {
 	redis                     redisx.RedisClient
 	config                    *config.AuthConfig
 	sendVerificationPublisher mq.AMQPPublisher
+	accountVerifiedPublisher  mq.AMQPPublisher
 }
 
 func NewAuthService(
@@ -42,6 +44,7 @@ func NewAuthService(
 	redis redisx.RedisClient,
 	config *config.AuthConfig,
 	sendVerificationPublisher mq.AMQPPublisher,
+	accountVerifiedPublisher mq.AMQPPublisher,
 ) AuthService {
 	return &authServiceImpl{
 		dataStore:                 datastore,
@@ -50,6 +53,7 @@ func NewAuthService(
 		redis:                     redis,
 		config:                    config,
 		sendVerificationPublisher: sendVerificationPublisher,
+		accountVerifiedPublisher:  accountVerifiedPublisher,
 	}
 }
 
@@ -225,4 +229,57 @@ func (s *authServiceImpl) Refresh(ctx context.Context, req *dto.RefreshRequest) 
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 	}, nil
+}
+
+func (s *authServiceImpl) Verify(ctx context.Context, req *dto.VerificationRequest) (*dto.VerificationResponse, error) {
+	var res *dto.VerificationResponse
+	err := s.dataStore.WithinTx(ctx, func(ds repository.AuthDataStore) error {
+		userRepo := ds.UserRepository()
+		verificationRepo := ds.VerificationRepository()
+
+		user, err := userRepo.FindByIdentifier(ctx, req.Email)
+		if err != nil {
+			return err
+		}
+		if user == nil {
+			return httperror.NewUserNotFoundError()
+		}
+		if user.IsVerified {
+			return httperror.NewUserAlreadyVerifiedError()
+		}
+
+		verification, err := verificationRepo.FindByUserID(ctx, user.ID)
+		if err != nil {
+			return err
+		}
+
+		if verification.ExpireAt.Before(time.Now()) {
+			return httperror.NewVerificationTokenExpiredError()
+		}
+		if verification.Token != req.Token {
+			return httperror.NewInvalidVerificationTokenError()
+		}
+
+		user.IsVerified = true
+		if err := userRepo.VerifyByUserID(ctx, user.ID); err != nil {
+			return err
+		}
+		if err := verificationRepo.DeleteByID(ctx, verification.ID); err != nil {
+			return err
+		}
+		if err := s.accountVerifiedPublisher.Publish(ctx, &dto.AccountVerifiedEvent{
+			Email: user.Email,
+			Name:  user.FullName,
+		}); err != nil {
+			return err
+		}
+
+		res = dto.ToVerificationResponse(user)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
 }

@@ -30,6 +30,7 @@ type RegisterResponse struct {
 	FullName      string    `json:"full_name"`
 	ProfilePicURL *string   `json:"profile_pic_url"`
 	Role          string    `json:"role"`
+	IsVerified    bool      `json:"is_verified"`
 	CreatedAt     time.Time `json:"created_at"`
 	UpdatedAt     time.Time `json:"updated_at"`
 }
@@ -42,6 +43,7 @@ func ToRegisterResponse(user *entity.User) *RegisterResponse {
 		FullName:      user.FullName,
 		ProfilePicURL: user.ProfilePicURL,
 		Role:          user.Role,
+		IsVerified:    user.IsVerified,
 		CreatedAt:     user.CreatedAt,
 		UpdatedAt:     user.UpdatedAt,
 	}
@@ -49,4 +51,23 @@ func ToRegisterResponse(user *entity.User) *RegisterResponse {
 
 type RefreshRequest struct {
 	RefreshToken string `json:"refresh_token" binding:"required"`
+}
+
+type VerificationRequest struct {
+	Email string `json:"email" binding:"required,email"`
+	Token string `json:"token" binding:"required"`
+}
+
+type VerificationResponse struct {
+	ID         int64  `json:"id"`
+	Email      string `json:"email"`
+	IsVerified bool   `json:"is_verified"`
+}
+
+func ToVerificationResponse(user *entity.User) *VerificationResponse {
+	return &VerificationResponse{
+		ID:         user.ID,
+		Email:      user.Email,
+		IsVerified: user.IsVerified,
+	}
 }

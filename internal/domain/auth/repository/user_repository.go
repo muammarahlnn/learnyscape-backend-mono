@@ -11,6 +11,7 @@ import (
 type UserRepository interface {
 	FindByIdentifier(ctx context.Context, identifier string) (*entity.User, error)
 	Create(ctx context.Context, params *entity.CreateUserParams) (*entity.User, error)
+	VerifyByUserID(ctx context.Context, userID int64) error
 }
 
 type userRepositoryImpl struct {
@@ -32,6 +33,7 @@ func (r *userRepositoryImpl) FindByIdentifier(ctx context.Context, identifier st
 		u.hash_password,
 		u.full_name,
 		u.profile_pic_url,
+		u.is_verified,
 		r.name
 	FROM
 		users u
@@ -53,6 +55,7 @@ func (r *userRepositoryImpl) FindByIdentifier(ctx context.Context, identifier st
 		&user.HashPassword,
 		&user.FullName,
 		&user.ProfilePicURL,
+		&user.IsVerified,
 		&user.Role,
 	)
 	if err != nil {
@@ -125,4 +128,23 @@ func (r *userRepositoryImpl) Create(ctx context.Context, params *entity.CreateUs
 	}
 
 	return &user, nil
+}
+
+func (r *userRepositoryImpl) VerifyByUserID(ctx context.Context, userID int64) error {
+	query := `
+	UPDATE
+		users
+	SET
+		is_verified = true,
+		updated_at = NOW()
+	WHERE
+		id = $1
+		AND deleted_at IS NULL
+	`
+
+	if _, err := r.db.ExecContext(ctx, query, userID); err != nil {
+		return err
+	}
+
+	return nil
 }
