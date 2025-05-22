@@ -4,6 +4,7 @@ import (
 	"learnyscape-backend-mono/pkg/httperror"
 	"learnyscape-backend-mono/pkg/logger"
 	"net/http"
+	"runtime/debug"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -46,6 +47,8 @@ func logErrors(ctx *gin.Context, logger logger.Logger, params map[string]any) {
 		default:
 			params["status_code"] = http.StatusInternalServerError
 			errors = append(errors, err)
+
+			logger.Errorf("internal server error: %s", string(debug.Stack()))
 		}
 	}
 

@@ -9,16 +9,15 @@ import (
 )
 
 type RedisOptions struct {
-	Addr                   string
-	Password               string
-	DialTimeout            int
-	ReadTimeout            int
-	WriteTimeout           int
-	MinIdleConn            int
-	MaxIdleConn            int
-	MaxActiveConn          int
-	MaxConnLifetime        int
-	RefreshTokenExpiration int
+	Addr            string
+	Password        string
+	DialTimeout     int
+	ReadTimeout     int
+	WriteTimeout    int
+	MinIdleConn     int
+	MaxIdleConn     int
+	MaxActiveConn   int
+	MaxConnLifetime int
 }
 
 func NewRedis(opt *RedisOptions) *redis.Client {

@@ -9,6 +9,7 @@ type AuthDataStore interface {
 	datastore.DataStore
 	WithinTx(ctx context.Context, fn func(AuthDataStore) error) error
 	UserRepository() UserRepository
+	VerificationRepository() VerificationRepository
 }
 
 type authDataStore struct {
@@ -27,4 +28,8 @@ func (ds *authDataStore) WithinTx(ctx context.Context, fn func(AuthDataStore) er
 
 func (ds *authDataStore) UserRepository() UserRepository {
 	return NewUserRepository(ds.DB())
+}
+
+func (ds *authDataStore) VerificationRepository() VerificationRepository {
+	return NewVerificationRepository(ds.DB())
 }

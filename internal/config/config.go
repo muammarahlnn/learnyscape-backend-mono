@@ -14,6 +14,8 @@ type Config struct {
 	Logger     *LoggerConfig
 	Postgres   *PostgresConfig
 	Redis      *RedisConfig
+	Amqp       *AMQPConfig
+	Auth       *AuthConfig
 }
 
 func InitConfig() *Config {
@@ -32,6 +34,8 @@ func InitConfig() *Config {
 		Logger:     initLoggerConfig(),
 		Postgres:   initPostgresConfig(),
 		Redis:      initRedisConfig(),
+		Amqp:       initAmqpConfig(),
+		Auth:       initAuthConfig(),
 	}
 }
 

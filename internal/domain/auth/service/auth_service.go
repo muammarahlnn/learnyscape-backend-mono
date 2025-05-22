@@ -4,12 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"learnyscape-backend-mono/internal/config"
 	"learnyscape-backend-mono/internal/domain/auth/constant"
 	"learnyscape-backend-mono/internal/domain/auth/dto"
 	"learnyscape-backend-mono/internal/domain/auth/entity"
 	"learnyscape-backend-mono/internal/domain/auth/httperror"
 	"learnyscape-backend-mono/internal/domain/auth/repository"
+	tokenutil "learnyscape-backend-mono/internal/domain/auth/util/token"
 	redisx "learnyscape-backend-mono/internal/shared/redis"
+	"learnyscape-backend-mono/pkg/mq"
 	encryptutil "learnyscape-backend-mono/pkg/util/encrypt"
 	jwtutil "learnyscape-backend-mono/pkg/util/jwt"
 	"time"
@@ -24,11 +27,12 @@ type AuthService interface {
 }
 
 type authServiceImpl struct {
-	dataStore       repository.AuthDataStore
-	hasher          encryptutil.Hasher
-	jwt             jwtutil.JWTUtil
-	redis           redisx.RedisClient
-	refreshTokenTTL time.Duration
+	dataStore                 repository.AuthDataStore
+	hasher                    encryptutil.Hasher
+	jwt                       jwtutil.JWTUtil
+	redis                     redisx.RedisClient
+	config                    *config.AuthConfig
+	sendVerificationPublisher mq.AMQPPublisher
 }
 
 func NewAuthService(
@@ -36,14 +40,16 @@ func NewAuthService(
 	hasher encryptutil.Hasher,
 	jwt jwtutil.JWTUtil,
 	redis redisx.RedisClient,
-	refreshTokenTTL time.Duration,
+	config *config.AuthConfig,
+	sendVerificationPublisher mq.AMQPPublisher,
 ) AuthService {
 	return &authServiceImpl{
-		dataStore:       datastore,
-		hasher:          hasher,
-		jwt:             jwt,
-		redis:           redis,
-		refreshTokenTTL: refreshTokenTTL,
+		dataStore:                 datastore,
+		hasher:                    hasher,
+		jwt:                       jwt,
+		redis:                     redis,
+		config:                    config,
+		sendVerificationPublisher: sendVerificationPublisher,
 	}
 }
 
@@ -83,7 +89,7 @@ func (s *authServiceImpl) Login(ctx context.Context, req *dto.LoginRequest) (*dt
 		ctx,
 		fmt.Sprintf(constant.RefreshTokenKey, refreshClaims.ID),
 		user.ID,
-		s.refreshTokenTTL,
+		time.Duration(s.config.RefreshTokenDuration)*time.Minute,
 	); err != nil {
 		return nil, err
 	}
@@ -98,6 +104,7 @@ func (s *authServiceImpl) Register(ctx context.Context, req *dto.RegisterRequest
 	var res *dto.RegisterResponse
 	err := s.dataStore.WithinTx(ctx, func(ds repository.AuthDataStore) error {
 		userRepo := ds.UserRepository()
+		verificationRepo := ds.VerificationRepository()
 
 		user, err := userRepo.FindByIdentifier(ctx, req.Username)
 		if err != nil {
@@ -120,15 +127,32 @@ func (s *authServiceImpl) Register(ctx context.Context, req *dto.RegisterRequest
 			return err
 		}
 
-		params := &entity.CreateUserParams{
+		user, err = userRepo.Create(ctx, &entity.CreateUserParams{
 			Username:     req.Username,
 			Email:        req.Email,
 			HashPassword: hashedPassword,
 			FullName:     req.FullName,
 			RoleID:       req.RoleID,
-		}
-		user, err = userRepo.Create(ctx, params)
+		})
 		if err != nil {
+			return err
+		}
+
+		params := &entity.CreateVerificationsParams{
+			UserID:   user.ID,
+			Token:    tokenutil.GenerateOTPCode(),
+			ExpireAt: time.Now().Add(time.Duration(s.config.AccountVerificationTokenDuration) * time.Minute),
+		}
+		verification, err := verificationRepo.Create(ctx, params)
+		if err != nil {
+			return err
+		}
+
+		if err := s.sendVerificationPublisher.Publish(ctx, &dto.SendVerificationEvent{
+			Email: user.Email,
+			Name:  user.FullName,
+			Token: verification.Token,
+		}); err != nil {
 			return err
 		}
 
@@ -192,7 +216,7 @@ func (s *authServiceImpl) Refresh(ctx context.Context, req *dto.RefreshRequest) 
 		ctx,
 		fmt.Sprintf(constant.RefreshTokenKey, newClaims.ID),
 		userID,
-		s.refreshTokenTTL,
+		time.Duration(s.config.RefreshTokenDuration)*time.Minute,
 	); err != nil {
 		return nil, err
 	}

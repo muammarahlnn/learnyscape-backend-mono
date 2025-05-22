@@ -8,6 +8,7 @@ import (
 	"learnyscape-backend-mono/pkg/logger"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 )
 
@@ -19,5 +20,20 @@ func Start() {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 
-	runHttpWorker(ctx, cfg)
+	var wg sync.WaitGroup
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		runHttpWorker(ctx, cfg)
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		runAMQPWorker(ctx, cfg)
+	}()
+
+	<-ctx.Done()
+	wg.Wait()
 }
