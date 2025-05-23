@@ -2,12 +2,18 @@ package dto
 
 import (
 	"learnyscape-backend-mono/internal/domain/auth/entity"
+	"net/mail"
 	"time"
 )
 
 type LoginRequest struct {
 	Identifier string `json:"identifier" binding:"required"`
 	Password   string `json:"password" binding:"required"`
+}
+
+func (r *LoginRequest) IsEmail() bool {
+	_, err := mail.ParseAddress(r.Identifier)
+	return err == nil
 }
 
 type LoginResponse struct {

@@ -66,6 +66,9 @@ func (s *authServiceImpl) Login(ctx context.Context, req *dto.LoginRequest) (*dt
 	if user == nil {
 		return nil, httperror.NewInvalidCredentialError()
 	}
+	if req.IsEmail() && !user.IsVerified {
+		return nil, httperror.NewEmailNotVerifiedError()
+	}
 
 	if ok := s.hasher.Check(req.Password, user.HashPassword); !ok {
 		return nil, httperror.NewInvalidCredentialError()

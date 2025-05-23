@@ -9,4 +9,5 @@ const (
 	VerificationTokenExpiredErrorMessage       = "verification token expired"
 	InvalidVerificationTokenErrorMessage       = "invalid verification token"
 	VerificationTokenAlreadyExistsErrorMessage = "verification token already exists"
+	EmailNotVerifiedErrorMessage               = "email not verified"
 )
