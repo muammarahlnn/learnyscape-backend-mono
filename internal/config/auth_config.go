@@ -7,8 +7,9 @@ import (
 )
 
 type AuthConfig struct {
-	RefreshTokenDuration             int `mapstructure:"JWT_REFRESH_TOKEN_DURATION"`
-	AccountVerificationTokenDuration int `mapstructure:"ACCOUNT_VERIFICATION_TOKEN_DURATION"`
+	RefreshTokenDuration                     int `mapstructure:"JWT_REFRESH_TOKEN_DURATION"`
+	AccountVerificationTokenDuration         int `mapstructure:"ACCOUNT_VERIFICATION_TOKEN_DURATION"`
+	AccountVerificationTokenCooldownDuration int `mapstructure:"ACCOUNT_VERIFICATION_TOKEN_COOLDOWN_DURATION"`
 }
 
 func initAuthConfig() *AuthConfig {

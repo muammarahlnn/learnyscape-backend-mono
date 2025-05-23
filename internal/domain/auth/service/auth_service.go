@@ -25,6 +25,7 @@ type AuthService interface {
 	Register(ctx context.Context, req *dto.RegisterRequest) (*dto.RegisterResponse, error)
 	Refresh(ctx context.Context, req *dto.RefreshRequest) (*dto.LoginResponse, error)
 	Verify(ctx context.Context, req *dto.VerificationRequest) (*dto.VerificationResponse, error)
+	ResendVerification(ctx context.Context, req *dto.ResendVerificationRequest) error
 }
 
 type authServiceImpl struct {
@@ -264,7 +265,7 @@ func (s *authServiceImpl) Verify(ctx context.Context, req *dto.VerificationReque
 		if err := userRepo.VerifyByUserID(ctx, user.ID); err != nil {
 			return err
 		}
-		if err := verificationRepo.DeleteByID(ctx, verification.ID); err != nil {
+		if err := verificationRepo.DeleteByUserID(ctx, verification.UserID); err != nil {
 			return err
 		}
 		if err := s.accountVerifiedPublisher.Publish(ctx, &dto.AccountVerifiedEvent{
@@ -282,4 +283,66 @@ func (s *authServiceImpl) Verify(ctx context.Context, req *dto.VerificationReque
 	}
 
 	return res, nil
+}
+
+func (s *authServiceImpl) ResendVerification(ctx context.Context, req *dto.ResendVerificationRequest) error {
+	err := s.dataStore.WithinTx(ctx, func(ds repository.AuthDataStore) error {
+		userRepo := ds.UserRepository()
+		verificationRepo := ds.VerificationRepository()
+
+		user, err := userRepo.FindByIdentifier(ctx, req.Email)
+		if err != nil {
+			return err
+		}
+		if user == nil {
+			return httperror.NewUserNotFoundError()
+		}
+		if user.IsVerified {
+			return httperror.NewUserAlreadyVerifiedError()
+		}
+
+		if token, err := s.redis.Get(
+			ctx,
+			fmt.Sprintf(constant.VerificationTokenKey, user.ID),
+		); token != "" && err != redis.Nil {
+			return httperror.NewVerificationTokenAlreadyExistsError()
+		}
+
+		params := &entity.CreateVerificationsParams{
+			UserID:   user.ID,
+			Token:    tokenutil.GenerateOTPCode(),
+			ExpireAt: time.Now().Add(time.Duration(s.config.AccountVerificationTokenDuration) * time.Minute),
+		}
+		if err := s.redis.Set(
+			ctx,
+			fmt.Sprintf(constant.VerificationTokenKey, params.UserID),
+			params.Token,
+			time.Duration(s.config.AccountVerificationTokenCooldownDuration)*time.Minute,
+		); err != nil {
+			return err
+		}
+
+		if err := verificationRepo.DeleteByUserID(ctx, user.ID); err != nil {
+			return err
+		}
+		verification, err := verificationRepo.Create(ctx, params)
+		if err != nil {
+			return err
+		}
+
+		if err := s.sendVerificationPublisher.Publish(ctx, &dto.SendVerificationEvent{
+			Email: user.Email,
+			Name:  user.FullName,
+			Token: verification.Token,
+		}); err != nil {
+			return err
+		}
+
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

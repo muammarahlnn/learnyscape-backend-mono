@@ -25,6 +25,7 @@ func (h *AuthHandler) Route(r *gin.RouterGroup) {
 		g.POST("/register", h.register)
 		g.POST("/refresh", h.refresh)
 		g.POST("/verify", h.verify)
+		g.POST("/resend-verification", h.resendVerification)
 	}
 }
 
@@ -90,4 +91,19 @@ func (h *AuthHandler) verify(ctx *gin.Context) {
 	}
 
 	ginutil.ResponseOK(ctx, res)
+}
+
+func (h *AuthHandler) resendVerification(ctx *gin.Context) {
+	var req dto.ResendVerificationRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	if err := h.authService.ResendVerification(ctx, &req); err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	ginutil.ResponseOK(ctx, "success resending verification email")
 }

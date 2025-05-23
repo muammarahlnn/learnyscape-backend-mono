@@ -9,7 +9,7 @@ import (
 type VerificationRepository interface {
 	Create(ctx context.Context, params *entity.CreateVerificationsParams) (*entity.Verification, error)
 	FindByUserID(ctx context.Context, userId int64) (*entity.Verification, error)
-	DeleteByID(ctx context.Context, id int64) error
+	DeleteByUserID(ctx context.Context, userId int64) error
 }
 
 type verificationRepositoryImpl struct {
@@ -93,18 +93,18 @@ func (r *verificationRepositoryImpl) FindByUserID(ctx context.Context, userId in
 	return &verification, nil
 }
 
-func (r *verificationRepositoryImpl) DeleteByID(ctx context.Context, id int64) error {
+func (r *verificationRepositoryImpl) DeleteByUserID(ctx context.Context, userId int64) error {
 	query := `
 	UPDATE
 		user_verifications
 	SET
 		deleted_at = NOW()
 	WHERE
-		id = $1
+		user_id = $1
 		AND deleted_at IS NULL
 	`
 
-	if _, err := r.db.ExecContext(ctx, query, id); err != nil {
+	if _, err := r.db.ExecContext(ctx, query, userId); err != nil {
 		return err
 	}
 

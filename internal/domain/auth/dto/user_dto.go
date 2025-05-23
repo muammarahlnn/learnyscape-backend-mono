@@ -71,3 +71,7 @@ func ToVerificationResponse(user *entity.User) *VerificationResponse {
 		IsVerified: user.IsVerified,
 	}
 }
+
+type ResendVerificationRequest struct {
+	Email string `json:"email" binding:"required,email"`
+}
