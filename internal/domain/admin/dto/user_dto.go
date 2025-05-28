@@ -38,3 +38,12 @@ func ToUserResponse(user *entity.User) *UserResponse {
 		UpdatedAt:     user.UpdatedAt,
 	}
 }
+
+func ToUserResponses(users []*entity.User) []*UserResponse {
+	res := make([]*UserResponse, len(users))
+	for i, user := range users {
+		res[i] = ToUserResponse(user)
+	}
+
+	return res
+}

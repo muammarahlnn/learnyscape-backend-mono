@@ -12,6 +12,7 @@ type UserRepository interface {
 	FindByIdentifier(ctx context.Context, identifier string) (*entity.User, error)
 	Create(ctx context.Context, params *entity.CreateUserParams) (*entity.User, error)
 	VerifyByUserID(ctx context.Context, userID int64) error
+	GetAll(ctx context.Context) ([]*entity.User, error)
 }
 
 type userRepositoryImpl struct {
@@ -147,4 +148,56 @@ func (r *userRepositoryImpl) VerifyByUserID(ctx context.Context, userID int64) e
 	}
 
 	return nil
+}
+
+func (r *userRepositoryImpl) GetAll(ctx context.Context) ([]*entity.User, error) {
+	query := `
+	SELECT
+		u.id,
+		u.username,
+		u.email,
+		u.full_name,
+		u.profile_pic_url,
+		u.is_verified,
+		r.name
+	FROM
+		users u
+	JOIN
+		roles r ON u.role_id = r.id
+		AND r.deleted_at IS NULL
+	WHERE
+		u.deleted_at IS NULL
+		AND r.deleted_at IS NULL
+	`
+
+	rows, err := r.db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []*entity.User
+	for rows.Next() {
+		var user entity.User
+
+		if err := rows.Scan(
+			&user.ID,
+			&user.Username,
+			&user.Email,
+			&user.FullName,
+			&user.ProfilePicURL,
+			&user.IsVerified,
+			&user.Role,
+		); err != nil {
+			return nil, err
+		}
+
+		users = append(users, &user)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return users, nil
 }

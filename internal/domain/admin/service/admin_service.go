@@ -17,6 +17,7 @@ import (
 type AdminService interface {
 	GetRoles(ctx context.Context) ([]*RoleResponse, error)
 	CreateUser(ctx context.Context, req *CreateUserRequest) (*UserResponse, error)
+	GetAllUsers(ctx context.Context) ([]*UserResponse, error)
 }
 
 type adminServiceimpl struct {
@@ -114,4 +115,13 @@ func (s *adminServiceimpl) CreateUser(ctx context.Context, req *CreateUserReques
 	}
 
 	return res, nil
+}
+
+func (s *adminServiceimpl) GetAllUsers(ctx context.Context) ([]*UserResponse, error) {
+	users, err := s.dataStore.UserRepository().GetAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return ToUserResponses(users), nil
 }
