@@ -18,8 +18,11 @@ func NewAdminHandler(adminService service.AdminService) *AdminHandler {
 	}
 }
 
-func (h *AdminHandler) Route(router *gin.RouterGroup) {
-	g := router.Group("/admin")
+func (h *AdminHandler) Route(
+	router *gin.RouterGroup,
+	adminMiddleware gin.HandlerFunc,
+) {
+	g := router.Group("/admin", adminMiddleware)
 	{
 		g.GET("/roles", h.getAllRoles)
 		g.POST("/users", h.createUser)
