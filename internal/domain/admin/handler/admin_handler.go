@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"learnyscape-backend-mono/internal/domain/admin/dto"
 	"learnyscape-backend-mono/internal/domain/admin/service"
 	ginutil "learnyscape-backend-mono/pkg/util/gin"
 
@@ -8,24 +9,41 @@ import (
 )
 
 type AdminHandler struct {
-	roleService service.AdminService
+	adminService service.AdminService
 }
 
-func NewAdminHandler(roleService service.AdminService) *AdminHandler {
+func NewAdminHandler(adminService service.AdminService) *AdminHandler {
 	return &AdminHandler{
-		roleService: roleService,
+		adminService: adminService,
 	}
 }
 
 func (h *AdminHandler) Route(router *gin.RouterGroup) {
 	g := router.Group("/admin")
 	{
-		g.GET("/roles", h.GetAll)
+		g.GET("/roles", h.getAllRoles)
+		g.POST("/users", h.createUser)
 	}
 }
 
-func (h *AdminHandler) GetAll(ctx *gin.Context) {
-	res, err := h.roleService.GetAll(ctx)
+func (h *AdminHandler) getAllRoles(ctx *gin.Context) {
+	res, err := h.adminService.GetRoles(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	ginutil.ResponseOK(ctx, res)
+}
+
+func (h *AdminHandler) createUser(ctx *gin.Context) {
+	var req dto.CreateUserRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	res, err := h.adminService.CreateUser(ctx, &req)
 	if err != nil {
 		ctx.Error(err)
 		return

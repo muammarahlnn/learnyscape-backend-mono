@@ -16,6 +16,7 @@ type Config struct {
 	Redis      *RedisConfig
 	Amqp       *AMQPConfig
 	Auth       *AuthConfig
+	Admin      *AdminConfig
 }
 
 func InitConfig() *Config {
@@ -36,6 +37,7 @@ func InitConfig() *Config {
 		Redis:      initRedisConfig(),
 		Amqp:       initAmqpConfig(),
 		Auth:       initAuthConfig(),
+		Admin:      initAdminConfig(),
 	}
 }
 

@@ -2,12 +2,12 @@ package repository
 
 import (
 	"context"
-	"learnyscape-backend-mono/internal/domain/auth/entity"
+	"learnyscape-backend-mono/internal/domain/shared/entity"
 	"learnyscape-backend-mono/internal/shared/datastore"
 )
 
 type VerificationRepository interface {
-	Create(ctx context.Context, params *entity.CreateVerificationsParams) (*entity.Verification, error)
+	Create(ctx context.Context, params *entity.CreateVerificationParams) (*entity.Verification, error)
 	FindByUserID(ctx context.Context, userId int64) (*entity.Verification, error)
 	DeleteByUserID(ctx context.Context, userId int64) error
 }
@@ -22,7 +22,7 @@ func NewVerificationRepository(db datastore.DBTX) VerificationRepository {
 	}
 }
 
-func (r *verificationRepositoryImpl) Create(ctx context.Context, params *entity.CreateVerificationsParams) (*entity.Verification, error) {
+func (r *verificationRepositoryImpl) Create(ctx context.Context, params *entity.CreateVerificationParams) (*entity.Verification, error) {
 	query := `
 	INSERT INTO
 		user_verifications (

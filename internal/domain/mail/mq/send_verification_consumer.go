@@ -3,9 +3,9 @@ package mq
 import (
 	"context"
 	"fmt"
-	authconstant "learnyscape-backend-mono/internal/domain/auth/constant"
-	"learnyscape-backend-mono/internal/domain/auth/dto"
 	"learnyscape-backend-mono/internal/domain/mail/constant"
+	sharedconstant "learnyscape-backend-mono/internal/domain/shared/constant"
+	"learnyscape-backend-mono/internal/domain/shared/dto"
 	"learnyscape-backend-mono/internal/log"
 	"learnyscape-backend-mono/pkg/mq"
 	smtputil "learnyscape-backend-mono/pkg/util/smtp"
@@ -25,9 +25,9 @@ type SendVerificationConsumer struct {
 }
 
 func NewSendVerificationConsumer(conn *amqp.Connection, mailer smtputil.Mailer) mq.AMQPConsumer {
-	queue := authconstant.SendVerificationQueue
-	key := authconstant.SendVerificationKey
-	exchange := authconstant.SendVerificationExchange
+	queue := sharedconstant.SendVerificationQueue
+	key := sharedconstant.SendVerificationKey
+	exchange := sharedconstant.SendVerificationExchange
 
 	ch, err := conn.Channel()
 	if err != nil {

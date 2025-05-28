@@ -6,11 +6,12 @@ import (
 	"fmt"
 	"learnyscape-backend-mono/internal/config"
 	"learnyscape-backend-mono/internal/domain/auth/constant"
-	"learnyscape-backend-mono/internal/domain/auth/dto"
-	"learnyscape-backend-mono/internal/domain/auth/entity"
+	. "learnyscape-backend-mono/internal/domain/auth/dto"
 	"learnyscape-backend-mono/internal/domain/auth/httperror"
 	"learnyscape-backend-mono/internal/domain/auth/repository"
-	tokenutil "learnyscape-backend-mono/internal/domain/auth/util/token"
+	. "learnyscape-backend-mono/internal/domain/shared/dto"
+	"learnyscape-backend-mono/internal/domain/shared/entity"
+	tokenutil "learnyscape-backend-mono/internal/domain/shared/util/token"
 	redisx "learnyscape-backend-mono/internal/shared/redis"
 	"learnyscape-backend-mono/pkg/mq"
 	encryptutil "learnyscape-backend-mono/pkg/util/encrypt"
@@ -21,44 +22,43 @@ import (
 )
 
 type AuthService interface {
-	Login(ctx context.Context, req *dto.LoginRequest) (*dto.LoginResponse, error)
-	Register(ctx context.Context, req *dto.RegisterRequest) (*dto.RegisterResponse, error)
-	Refresh(ctx context.Context, req *dto.RefreshRequest) (*dto.LoginResponse, error)
-	Verify(ctx context.Context, req *dto.VerificationRequest) (*dto.VerificationResponse, error)
-	ResendVerification(ctx context.Context, req *dto.ResendVerificationRequest) error
+	Login(ctx context.Context, req *LoginRequest) (*LoginResponse, error)
+	Refresh(ctx context.Context, req *RefreshRequest) (*LoginResponse, error)
+	Verify(ctx context.Context, req *VerificationRequest) (*VerificationResponse, error)
+	ResendVerification(ctx context.Context, req *ResendVerificationRequest) error
 }
 
 type authServiceImpl struct {
+	config                    *config.AuthConfig
 	dataStore                 repository.AuthDataStore
+	redis                     redisx.RedisClient
 	hasher                    encryptutil.Hasher
 	jwt                       jwtutil.JWTUtil
-	redis                     redisx.RedisClient
-	config                    *config.AuthConfig
 	sendVerificationPublisher mq.AMQPPublisher
 	accountVerifiedPublisher  mq.AMQPPublisher
 }
 
 func NewAuthService(
+	config *config.AuthConfig,
 	datastore repository.AuthDataStore,
+	redis redisx.RedisClient,
 	hasher encryptutil.Hasher,
 	jwt jwtutil.JWTUtil,
-	redis redisx.RedisClient,
-	config *config.AuthConfig,
 	sendVerificationPublisher mq.AMQPPublisher,
 	accountVerifiedPublisher mq.AMQPPublisher,
 ) AuthService {
 	return &authServiceImpl{
+		config:                    config,
 		dataStore:                 datastore,
+		redis:                     redis,
 		hasher:                    hasher,
 		jwt:                       jwt,
-		redis:                     redis,
-		config:                    config,
 		sendVerificationPublisher: sendVerificationPublisher,
 		accountVerifiedPublisher:  accountVerifiedPublisher,
 	}
 }
 
-func (s *authServiceImpl) Login(ctx context.Context, req *dto.LoginRequest) (*dto.LoginResponse, error) {
+func (s *authServiceImpl) Login(ctx context.Context, req *LoginRequest) (*LoginResponse, error) {
 	user, err := s.dataStore.UserRepository().FindByIdentifier(ctx, req.Identifier)
 	if err != nil {
 		return nil, err
@@ -102,79 +102,13 @@ func (s *authServiceImpl) Login(ctx context.Context, req *dto.LoginRequest) (*dt
 		return nil, err
 	}
 
-	return &dto.LoginResponse{
+	return &LoginResponse{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 	}, nil
 }
 
-func (s *authServiceImpl) Register(ctx context.Context, req *dto.RegisterRequest) (*dto.RegisterResponse, error) {
-	var res *dto.RegisterResponse
-	err := s.dataStore.WithinTx(ctx, func(ds repository.AuthDataStore) error {
-		userRepo := ds.UserRepository()
-		verificationRepo := ds.VerificationRepository()
-
-		user, err := userRepo.FindByIdentifier(ctx, req.Username)
-		if err != nil {
-			return err
-		}
-		if user != nil {
-			return httperror.NewUserAlreadyExistsError()
-		}
-
-		user, err = userRepo.FindByIdentifier(ctx, req.Email)
-		if err != nil {
-			return err
-		}
-		if user != nil {
-			return httperror.NewUserAlreadyExistsError()
-		}
-
-		hashedPassword, err := s.hasher.Hash(req.Password)
-		if err != nil {
-			return err
-		}
-
-		user, err = userRepo.Create(ctx, &entity.CreateUserParams{
-			Username:     req.Username,
-			Email:        req.Email,
-			HashPassword: hashedPassword,
-			FullName:     req.FullName,
-			RoleID:       req.RoleID,
-		})
-		if err != nil {
-			return err
-		}
-
-		params := &entity.CreateVerificationsParams{
-			UserID:   user.ID,
-			Token:    tokenutil.GenerateOTPCode(),
-			ExpireAt: time.Now().Add(time.Duration(s.config.AccountVerificationTokenDuration) * time.Minute),
-		}
-		verification, err := verificationRepo.Create(ctx, params)
-		if err != nil {
-			return err
-		}
-
-		if err := s.sendVerificationPublisher.Publish(ctx, &dto.SendVerificationEvent{
-			Email: user.Email,
-			Name:  user.FullName,
-			Token: verification.Token,
-		}); err != nil {
-			return err
-		}
-
-		res = dto.ToRegisterResponse(user)
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return res, nil
-}
-
-func (s *authServiceImpl) Refresh(ctx context.Context, req *dto.RefreshRequest) (*dto.LoginResponse, error) {
+func (s *authServiceImpl) Refresh(ctx context.Context, req *RefreshRequest) (*LoginResponse, error) {
 	claims, err := s.jwt.ParseRefresh(req.RefreshToken)
 	if err != nil {
 		return nil, httperror.NewInvalidRefreshTokenError()
@@ -229,14 +163,14 @@ func (s *authServiceImpl) Refresh(ctx context.Context, req *dto.RefreshRequest) 
 		return nil, err
 	}
 
-	return &dto.LoginResponse{
+	return &LoginResponse{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 	}, nil
 }
 
-func (s *authServiceImpl) Verify(ctx context.Context, req *dto.VerificationRequest) (*dto.VerificationResponse, error) {
-	var res *dto.VerificationResponse
+func (s *authServiceImpl) Verify(ctx context.Context, req *VerificationRequest) (*VerificationResponse, error) {
+	var res *VerificationResponse
 	err := s.dataStore.WithinTx(ctx, func(ds repository.AuthDataStore) error {
 		userRepo := ds.UserRepository()
 		verificationRepo := ds.VerificationRepository()
@@ -271,14 +205,14 @@ func (s *authServiceImpl) Verify(ctx context.Context, req *dto.VerificationReque
 		if err := verificationRepo.DeleteByUserID(ctx, verification.UserID); err != nil {
 			return err
 		}
-		if err := s.accountVerifiedPublisher.Publish(ctx, &dto.AccountVerifiedEvent{
+		if err := s.accountVerifiedPublisher.Publish(ctx, &AccountVerifiedEvent{
 			Email: user.Email,
 			Name:  user.FullName,
 		}); err != nil {
 			return err
 		}
 
-		res = dto.ToVerificationResponse(user)
+		res = ToVerificationResponse(user)
 		return nil
 	})
 	if err != nil {
@@ -288,7 +222,7 @@ func (s *authServiceImpl) Verify(ctx context.Context, req *dto.VerificationReque
 	return res, nil
 }
 
-func (s *authServiceImpl) ResendVerification(ctx context.Context, req *dto.ResendVerificationRequest) error {
+func (s *authServiceImpl) ResendVerification(ctx context.Context, req *ResendVerificationRequest) error {
 	err := s.dataStore.WithinTx(ctx, func(ds repository.AuthDataStore) error {
 		userRepo := ds.UserRepository()
 		verificationRepo := ds.VerificationRepository()
@@ -311,7 +245,7 @@ func (s *authServiceImpl) ResendVerification(ctx context.Context, req *dto.Resen
 			return httperror.NewVerificationTokenAlreadyExistsError()
 		}
 
-		params := &entity.CreateVerificationsParams{
+		params := &entity.CreateVerificationParams{
 			UserID:   user.ID,
 			Token:    tokenutil.GenerateOTPCode(),
 			ExpireAt: time.Now().Add(time.Duration(s.config.AccountVerificationTokenDuration) * time.Minute),
@@ -333,7 +267,7 @@ func (s *authServiceImpl) ResendVerification(ctx context.Context, req *dto.Resen
 			return err
 		}
 
-		if err := s.sendVerificationPublisher.Publish(ctx, &dto.SendVerificationEvent{
+		if err := s.sendVerificationPublisher.Publish(ctx, &SendVerificationEvent{
 			Email: user.Email,
 			Name:  user.FullName,
 			Token: verification.Token,

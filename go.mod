@@ -16,7 +16,6 @@ require (
 	github.com/redis/go-redis/v9 v9.8.0
 	github.com/rs/zerolog v1.34.0
 	github.com/spf13/viper v1.20.1
-	go.uber.org/zap v1.27.0
 	golang.org/x/crypto v0.36.0
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
 )

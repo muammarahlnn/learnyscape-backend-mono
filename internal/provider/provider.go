@@ -2,6 +2,7 @@ package provider
 
 import (
 	"learnyscape-backend-mono/internal/config"
+	sharedmq "learnyscape-backend-mono/internal/domain/shared/mq"
 	"learnyscape-backend-mono/internal/shared/datastore"
 	redisx "learnyscape-backend-mono/internal/shared/redis"
 	"learnyscape-backend-mono/pkg/database"
@@ -26,6 +27,10 @@ var (
 	mailer       smtputil.Mailer
 )
 
+var (
+	sendVerificationPublisher mq.AMQPPublisher
+)
+
 func BootstrapGlobal(cfg *config.Config) {
 	db = database.NewPostgres((*database.PostgresOptions)(cfg.Postgres))
 	rdb = database.NewRedis((*database.RedisOptions)(cfg.Redis))
@@ -35,4 +40,10 @@ func BootstrapGlobal(cfg *config.Config) {
 	jwtUtil = jwtutil.NewJWTUtil()
 	bcryptHasher = encryptutil.NewBcryptHasher(cfg.App.BCryptCost)
 	mailer = smtputil.NewMailer()
+
+	bootstrapPublishers()
+}
+
+func bootstrapPublishers() {
+	sendVerificationPublisher = sharedmq.NewSendVerificationPublisher(rabbitmq)
 }

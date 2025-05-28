@@ -22,7 +22,6 @@ func (h *AuthHandler) Route(r *gin.RouterGroup) {
 	g := r.Group("/auth")
 	{
 		g.POST("/login", h.login)
-		g.POST("/register", h.register)
 		g.POST("/refresh", h.refresh)
 		g.POST("/verify", h.verify)
 		g.POST("/resend-verification", h.resendVerification)
@@ -37,22 +36,6 @@ func (h *AuthHandler) login(ctx *gin.Context) {
 	}
 
 	res, err := h.authService.Login(ctx, &req)
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
-
-	ginutil.ResponseOK(ctx, res)
-}
-
-func (h *AuthHandler) register(ctx *gin.Context) {
-	var req dto.RegisterRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(err)
-		return
-	}
-
-	res, err := h.authService.Register(ctx, &req)
 	if err != nil {
 		ctx.Error(err)
 		return

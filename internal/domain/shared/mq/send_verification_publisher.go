@@ -3,7 +3,7 @@ package mq
 import (
 	"context"
 	"fmt"
-	"learnyscape-backend-mono/internal/domain/auth/constant"
+	"learnyscape-backend-mono/internal/domain/shared/constant"
 	"learnyscape-backend-mono/internal/log"
 	pkgconstant "learnyscape-backend-mono/pkg/constant"
 	"learnyscape-backend-mono/pkg/mq"

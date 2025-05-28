@@ -1,15 +1,31 @@
 package dto
 
-import "learnyscape-backend-mono/internal/domain/auth/constant"
+import (
+	"learnyscape-backend-mono/internal/domain/auth/constant"
+	"learnyscape-backend-mono/internal/domain/shared/entity"
+)
 
-type SendVerificationEvent struct {
-	Email string `json:"email"`
-	Name  string `json:"name"`
-	Token string `json:"token"`
+type VerificationRequest struct {
+	Email string `json:"email" binding:"required,email"`
+	Token string `json:"token" binding:"required"`
 }
 
-func (e SendVerificationEvent) Key() string {
-	return constant.SendVerificationKey
+type VerificationResponse struct {
+	ID         int64  `json:"id"`
+	Email      string `json:"email"`
+	IsVerified bool   `json:"is_verified"`
+}
+
+func ToVerificationResponse(user *entity.User) *VerificationResponse {
+	return &VerificationResponse{
+		ID:         user.ID,
+		Email:      user.Email,
+		IsVerified: user.IsVerified,
+	}
+}
+
+type ResendVerificationRequest struct {
+	Email string `json:"email" binding:"required,email"`
 }
 
 type AccountVerifiedEvent struct {

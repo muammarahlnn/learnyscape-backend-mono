@@ -11,5 +11,5 @@ func BootstrapHttp(cfg *config.Config, router *gin.Engine) {
 
 	rg := router.Group("/api/v1")
 	BootstrapAuth(cfg, rg)
-	BootstrapAdmin(rg)
+	BootstrapAdmin(cfg, rg)
 }

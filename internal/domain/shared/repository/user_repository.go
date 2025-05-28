@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"learnyscape-backend-mono/internal/domain/auth/entity"
+	"learnyscape-backend-mono/internal/domain/shared/entity"
 	"learnyscape-backend-mono/internal/shared/datastore"
 )
 

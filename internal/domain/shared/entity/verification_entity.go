@@ -11,7 +11,7 @@ type Verification struct {
 	UpdatedAt time.Time
 }
 
-type CreateVerificationsParams struct {
+type CreateVerificationParams struct {
 	UserID   int64
 	Token    string
 	ExpireAt time.Time
