@@ -169,7 +169,12 @@ func (r *userRepositoryImpl) Search(ctx context.Context, params *entity.SearchUs
 		AND ($1 = '' OR u.username ILIKE $1)
 		AND ($1 = '' OR u.email ILIKE $1)
 		AND ($1 = '' OR u.full_name ILIKE $1)
-	LIMIT $2 OFFSET $3
+	ORDER BY 
+		u.updated_at DESC
+	LIMIT 
+		$2 
+	OFFSET 
+		$3
 	`
 
 	search := fmt.Sprintf("%%%s%%", params.Query)
