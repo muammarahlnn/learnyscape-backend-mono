@@ -17,6 +17,7 @@ type UserRepository interface {
 	Search(ctx context.Context, params *entity.SearchUserParams) ([]*entity.User, int64, error)
 	Update(ctx context.Context, params *entity.UpdateUserParams) (*entity.User, error)
 	FindByID(ctx context.Context, id int64) (*entity.User, error)
+	Delete(ctx context.Context, id int64) error
 }
 
 type userRepositoryImpl struct {
@@ -331,4 +332,23 @@ func (r *userRepositoryImpl) FindByID(ctx context.Context, id int64) (*entity.Us
 	}
 
 	return &user, nil
+}
+
+func (r *userRepositoryImpl) Delete(ctx context.Context, id int64) error {
+	query := `
+	UPDATE
+		users
+	SET
+		deleted_at = NOW()
+	WHERE
+		id = $1
+		AND deleted_at IS NULL
+	`
+
+	_, err := r.db.ExecContext(ctx, query, id)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

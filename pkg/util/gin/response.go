@@ -19,6 +19,10 @@ func ResponsePagination[T any](ctx *gin.Context, data T, paging *dto.PageMetaDat
 	ResponseJSON(ctx, http.StatusOK, data, paging)
 }
 
+func ResponseNoContent(ctx *gin.Context) {
+	ResponseJSON[any](ctx, http.StatusNoContent, nil, nil)
+}
+
 func ResponseJSON[T any](ctx *gin.Context, statusCode int, data T, paging *dto.PageMetaData) {
 	ctx.JSON(statusCode, dto.WebResponse[T]{Data: data, Paging: paging})
 }

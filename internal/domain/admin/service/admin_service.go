@@ -22,6 +22,7 @@ type AdminService interface {
 	SearchUser(ctx context.Context, req *SearchUserRequest) ([]*UserResponse, *PageMetaData, error)
 	GetUser(ctx context.Context, id int64) (*UserResponse, error)
 	UpdateUser(ctx context.Context, id int64, req *UpdaetUserRequest) (*UserResponse, error)
+	DeleteUser(ctx context.Context, id int64) error
 }
 
 type adminServiceimpl struct {
@@ -168,4 +169,22 @@ func (s *adminServiceimpl) UpdateUser(ctx context.Context, id int64, req *Updaet
 	}
 
 	return ToUserResponse(user), nil
+}
+
+func (s *adminServiceimpl) DeleteUser(ctx context.Context, id int64) error {
+	userRepo := s.dataStore.UserRepository()
+
+	user, err := userRepo.FindByID(ctx, id)
+	if err != nil {
+		return err
+	}
+	if user == nil {
+		return httperror.NewUserNotFoundError()
+	}
+
+	if err := userRepo.Delete(ctx, id); err != nil {
+		return err
+	}
+
+	return nil
 }

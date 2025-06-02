@@ -67,3 +67,7 @@ type UpdaetUserRequest struct {
 	Email    string `json:"email" binding:"required,email"`
 	FullName string `json:"full_name" binding:"required"`
 }
+
+type DeleteUserPathParams struct {
+	ID int64 `uri:"id" binding:"required"`
+}

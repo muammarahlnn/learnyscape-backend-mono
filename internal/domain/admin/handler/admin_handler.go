@@ -32,6 +32,7 @@ func (h *AdminHandler) Route(
 		g.GET("/users", h.searchUser)
 		g.GET("/users/:id", h.getUser)
 		g.PUT("/users/:id", h.updateUser)
+		g.DELETE("/users/:id", h.deleteUser)
 	}
 }
 
@@ -122,4 +123,20 @@ func (h *AdminHandler) updateUser(ctx *gin.Context) {
 	}
 
 	ginutil.ResponseOK(ctx, res)
+}
+
+func (h *AdminHandler) deleteUser(ctx *gin.Context) {
+	var pathParams dto.DeleteUserPathParams
+	if err := ctx.ShouldBindUri(&pathParams); err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	err := h.adminService.DeleteUser(ctx, pathParams.ID)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	ginutil.ResponseNoContent(ctx)
 }
