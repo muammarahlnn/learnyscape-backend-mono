@@ -22,3 +22,9 @@ type CreateUserParams struct {
 	FullName     string
 	RoleID       int64
 }
+
+type SearchUserParams struct {
+	Query string
+	Limit int64
+	Page  int64
+}

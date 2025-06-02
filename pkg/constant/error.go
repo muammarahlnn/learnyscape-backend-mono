@@ -10,4 +10,5 @@ const (
 	RequestCanceledErrorMessage    = "request canceled by client, please try again"
 	UnauthorizedErrorMessage       = "unauthorized"
 	ForbiddenErrorMessage          = "only accessible by certain user"
+	NumErrorMessage                = "invalid number, \"%s\" should be a number"
 )

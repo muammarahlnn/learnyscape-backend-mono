@@ -10,6 +10,7 @@ import (
 	"learnyscape-backend-mono/pkg/httperror"
 	validationutil "learnyscape-backend-mono/pkg/util/validation"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -31,6 +32,8 @@ func ErrorMiddleware() gin.HandlerFunc {
 			handleJsonSyntaxError(ctx)
 		case *json.UnmarshalTypeError:
 			handleJsonUnmarshalTypeError(ctx, e)
+		case *strconv.NumError:
+			handleNumError(ctx, e)
 		case *time.ParseError:
 			handleParseTimeError(ctx, e)
 		case *httperror.ResponseError:
@@ -60,6 +63,15 @@ func handleJsonUnmarshalTypeError(ctx *gin.Context, err *json.UnmarshalTypeError
 		http.StatusBadRequest,
 		dto.WebResponse[any]{
 			Message: fmt.Sprintf(constant.JsonUnMarshallTypeErrorMessage, err.Field),
+		},
+	)
+}
+
+func handleNumError(ctx *gin.Context, err *strconv.NumError) {
+	ctx.AbortWithStatusJSON(
+		http.StatusBadRequest,
+		dto.WebResponse[any]{
+			Message: fmt.Sprintf(constant.NumErrorMessage, err.Num),
 		},
 	)
 }

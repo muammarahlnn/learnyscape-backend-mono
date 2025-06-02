@@ -15,3 +15,8 @@ type Links struct {
 	First string `json:"first"`
 	Last  string `json:"last"`
 }
+
+type Pagination struct {
+	Limit int64 `form:"limit" binding:"omitempty,gte=1,lte=50"`
+	Page  int64 `form:"page" binding:"omitempty,gte=1"`
+}

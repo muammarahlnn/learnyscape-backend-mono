@@ -9,15 +9,17 @@ import (
 	. "learnyscape-backend-mono/internal/domain/shared/dto"
 	"learnyscape-backend-mono/internal/domain/shared/entity"
 	tokenutil "learnyscape-backend-mono/internal/domain/shared/util/token"
+	. "learnyscape-backend-mono/pkg/dto"
 	"learnyscape-backend-mono/pkg/mq"
 	encryptutil "learnyscape-backend-mono/pkg/util/encrypt"
+	pageutil "learnyscape-backend-mono/pkg/util/page"
 	"time"
 )
 
 type AdminService interface {
 	GetRoles(ctx context.Context) ([]*RoleResponse, error)
 	CreateUser(ctx context.Context, req *CreateUserRequest) (*UserResponse, error)
-	GetAllUsers(ctx context.Context) ([]*UserResponse, error)
+	SearchUser(ctx context.Context, req *SearchUserRequest) ([]*UserResponse, *PageMetaData, error)
 }
 
 type adminServiceimpl struct {
@@ -117,11 +119,15 @@ func (s *adminServiceimpl) CreateUser(ctx context.Context, req *CreateUserReques
 	return res, nil
 }
 
-func (s *adminServiceimpl) GetAllUsers(ctx context.Context) ([]*UserResponse, error) {
-	users, err := s.dataStore.UserRepository().GetAll(ctx)
+func (s *adminServiceimpl) SearchUser(ctx context.Context, req *SearchUserRequest) ([]*UserResponse, *PageMetaData, error) {
+	users, total, err := s.dataStore.UserRepository().Search(ctx, &entity.SearchUserParams{
+		Query: req.Query,
+		Limit: req.Limit,
+		Page:  req.Page,
+	})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return ToUserResponses(users), nil
+	return ToUserResponses(users), pageutil.NewMetadata(total, req.Limit, req.Page), nil
 }

@@ -4,15 +4,17 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"learnyscape-backend-mono/internal/domain/shared/entity"
 	"learnyscape-backend-mono/internal/shared/datastore"
+	pageutil "learnyscape-backend-mono/pkg/util/page"
 )
 
 type UserRepository interface {
 	FindByIdentifier(ctx context.Context, identifier string) (*entity.User, error)
 	Create(ctx context.Context, params *entity.CreateUserParams) (*entity.User, error)
 	VerifyByUserID(ctx context.Context, userID int64) error
-	GetAll(ctx context.Context) ([]*entity.User, error)
+	Search(ctx context.Context, params *entity.SearchUserParams) ([]*entity.User, int64, error)
 }
 
 type userRepositoryImpl struct {
@@ -150,7 +152,7 @@ func (r *userRepositoryImpl) VerifyByUserID(ctx context.Context, userID int64) e
 	return nil
 }
 
-func (r *userRepositoryImpl) GetAll(ctx context.Context) ([]*entity.User, error) {
+func (r *userRepositoryImpl) Search(ctx context.Context, params *entity.SearchUserParams) ([]*entity.User, int64, error) {
 	query := `
 	SELECT
 		u.id,
@@ -159,7 +161,8 @@ func (r *userRepositoryImpl) GetAll(ctx context.Context) ([]*entity.User, error)
 		u.full_name,
 		u.profile_pic_url,
 		u.is_verified,
-		r.name
+		r.name,
+		COUNT(*) OVER(PARTITION BY 1)
 	FROM
 		users u
 	JOIN
@@ -167,16 +170,24 @@ func (r *userRepositoryImpl) GetAll(ctx context.Context) ([]*entity.User, error)
 		AND r.deleted_at IS NULL
 	WHERE
 		u.deleted_at IS NULL
-		AND r.deleted_at IS NULL
+		AND ($1 = '' OR u.username ILIKE $1)
+		AND ($1 = '' OR u.email ILIKE $1)
+		AND ($1 = '' OR u.full_name ILIKE $1)
+	LIMIT $2 OFFSET $3
 	`
 
-	rows, err := r.db.QueryContext(ctx, query)
+	search := fmt.Sprintf("%%%s%%", params.Query)
+	offset := pageutil.Offset(params.Page, params.Limit)
+	rows, err := r.db.QueryContext(ctx, query, search, params.Limit, offset)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
 
-	var users []*entity.User
+	var (
+		users []*entity.User
+		total int64
+	)
 	for rows.Next() {
 		var user entity.User
 
@@ -188,16 +199,17 @@ func (r *userRepositoryImpl) GetAll(ctx context.Context) ([]*entity.User, error)
 			&user.ProfilePicURL,
 			&user.IsVerified,
 			&user.Role,
+			&total,
 		); err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 
 		users = append(users, &user)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	return users, nil
+	return users, total, nil
 }

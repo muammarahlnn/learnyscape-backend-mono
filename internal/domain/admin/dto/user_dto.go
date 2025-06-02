@@ -2,6 +2,7 @@ package dto
 
 import (
 	"learnyscape-backend-mono/internal/domain/shared/entity"
+	"learnyscape-backend-mono/pkg/dto"
 	"time"
 )
 
@@ -46,4 +47,9 @@ func ToUserResponses(users []*entity.User) []*UserResponse {
 	}
 
 	return res
+}
+
+type SearchUserRequest struct {
+	Query string `form:"query"`
+	*dto.Pagination
 }
