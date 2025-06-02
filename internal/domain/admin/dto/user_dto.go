@@ -54,6 +54,10 @@ type SearchUserRequest struct {
 	*dto.Pagination
 }
 
+type GetUserPathParams struct {
+	ID int64 `uri:"id" binding:"required"`
+}
+
 type UpdateUserPathParams struct {
 	ID int64 `uri:"id" binding:"required"`
 }

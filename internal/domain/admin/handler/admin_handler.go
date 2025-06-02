@@ -30,6 +30,7 @@ func (h *AdminHandler) Route(
 		g.GET("/roles", h.getAllRoles)
 		g.POST("/users", h.createUser)
 		g.GET("/users", h.searchUser)
+		g.GET("/users/:id", h.getUser)
 		g.PUT("/users/:id", h.updateUser)
 	}
 }
@@ -83,6 +84,22 @@ func (h *AdminHandler) searchUser(ctx *gin.Context) {
 	)
 
 	ginutil.ResponsePagination(ctx, res, paging)
+}
+
+func (h *AdminHandler) getUser(ctx *gin.Context) {
+	var pathParams dto.GetUserPathParams
+	if err := ctx.ShouldBindUri(&pathParams); err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	res, err := h.adminService.GetUser(ctx, pathParams.ID)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	ginutil.ResponseOK(ctx, res)
 }
 
 func (h *AdminHandler) updateUser(ctx *gin.Context) {
