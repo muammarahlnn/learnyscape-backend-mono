@@ -7,9 +7,9 @@ import (
 	"net/http"
 )
 
-func NewUserAlreadyExistsError() *httperror.ResponseError {
-	msg := constant.UserAlreadyExistsErrorMessage
+func NewUserNotFoundError() *httperror.ResponseError {
+	msg := constant.UserNotFoundErrorMessage
 	err := errors.New(msg)
 
-	return httperror.NewResponseError(err, http.StatusConflict, msg)
+	return httperror.NewResponseError(err, http.StatusNotFound, msg)
 }

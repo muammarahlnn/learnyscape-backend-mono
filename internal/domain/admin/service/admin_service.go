@@ -20,6 +20,7 @@ type AdminService interface {
 	GetRoles(ctx context.Context) ([]*RoleResponse, error)
 	CreateUser(ctx context.Context, req *CreateUserRequest) (*UserResponse, error)
 	SearchUser(ctx context.Context, req *SearchUserRequest) ([]*UserResponse, *PageMetaData, error)
+	UpdateUser(ctx context.Context, userId int64, req *UpdaetUserRequest) (*UserResponse, error)
 }
 
 type adminServiceimpl struct {
@@ -130,4 +131,37 @@ func (s *adminServiceimpl) SearchUser(ctx context.Context, req *SearchUserReques
 	}
 
 	return ToUserResponses(users), pageutil.NewMetadata(total, req.Limit, req.Page), nil
+}
+
+func (s *adminServiceimpl) UpdateUser(ctx context.Context, userId int64, req *UpdaetUserRequest) (*UserResponse, error) {
+	var res *UserResponse
+	err := s.dataStore.WithinTx(ctx, func(ds repository.AdminDataStore) error {
+		userRepo := ds.UserRepository()
+
+		user, err := userRepo.FindByID(ctx, userId)
+		if err != nil {
+			return err
+		}
+		if user == nil {
+			return httperror.NewUserNotFoundError()
+		}
+
+		user, err = userRepo.Update(ctx, &entity.UpdateUserParams{
+			ID:       userId,
+			Username: req.Username,
+			Email:    req.Email,
+			FullName: req.FullName,
+		})
+		if err != nil {
+			return err
+		}
+
+		res = ToUserResponse(user)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
 }

@@ -53,3 +53,13 @@ type SearchUserRequest struct {
 	Query string `form:"query"`
 	*dto.Pagination
 }
+
+type UpdateUserPathParams struct {
+	ID int64 `uri:"id" binding:"required"`
+}
+
+type UpdaetUserRequest struct {
+	Username string `json:"username" binding:"required"`
+	Email    string `json:"email" binding:"required,email"`
+	FullName string `json:"full_name" binding:"required"`
+}

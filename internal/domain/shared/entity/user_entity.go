@@ -28,3 +28,10 @@ type SearchUserParams struct {
 	Limit int64
 	Page  int64
 }
+
+type UpdateUserParams struct {
+	ID       int64
+	Username string
+	Email    string
+	FullName string
+}

@@ -15,6 +15,8 @@ type UserRepository interface {
 	Create(ctx context.Context, params *entity.CreateUserParams) (*entity.User, error)
 	VerifyByUserID(ctx context.Context, userID int64) error
 	Search(ctx context.Context, params *entity.SearchUserParams) ([]*entity.User, int64, error)
+	Update(ctx context.Context, params *entity.UpdateUserParams) (*entity.User, error)
+	FindByID(ctx context.Context, id int64) (*entity.User, error)
 }
 
 type userRepositoryImpl struct {
@@ -117,18 +119,11 @@ func (r *userRepositoryImpl) Create(ctx context.Context, params *entity.CreateUs
 		return nil, err
 	}
 
-	query = `
-	SELECT
-		name
-	FROM
-		roles
-	WHERE
-		id = $1
-		AND deleted_at IS NULL
-	`
-	if err := r.db.QueryRowContext(ctx, query, roleID).Scan(&user.Role); err != nil {
+	role, err := r.getRole(ctx, roleID)
+	if err != nil {
 		return nil, err
 	}
+	user.Role = role
 
 	return &user, nil
 }
@@ -212,4 +207,128 @@ func (r *userRepositoryImpl) Search(ctx context.Context, params *entity.SearchUs
 	}
 
 	return users, total, nil
+}
+
+func (r *userRepositoryImpl) Update(ctx context.Context, params *entity.UpdateUserParams) (*entity.User, error) {
+	query := `
+	UPDATE
+		users
+	SET
+		username = $1,
+		email = $2,
+		full_name = $3,
+		updated_at = NOW()
+	WHERE
+		id = $4
+		AND deleted_at IS NULL
+	RETURNING
+		id,
+		username,
+		email,
+		full_name,
+		profile_pic_url,
+		is_verified,
+		role_id,
+		created_at,
+		updated_at
+	`
+
+	var (
+		user   entity.User
+		roleID int64
+	)
+	if err := r.db.QueryRowContext(
+		ctx,
+		query,
+		params.Username,
+		params.Email,
+		params.FullName,
+		params.ID,
+	).Scan(
+		&user.ID,
+		&user.Username,
+		&user.Email,
+		&user.FullName,
+		&user.ProfilePicURL,
+		&user.IsVerified,
+		&roleID,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	); err != nil {
+		return nil, err
+	}
+
+	role, err := r.getRole(ctx, roleID)
+	if err != nil {
+		return nil, err
+	}
+	user.Role = role
+
+	return &user, nil
+}
+
+func (r *userRepositoryImpl) getRole(ctx context.Context, roleID int64) (string, error) {
+	query := `
+	SELECT
+		name
+	FROM
+		roles
+	WHERE
+		id = $1
+		AND deleted_at IS NULL
+	`
+
+	var role string
+	if err := r.db.QueryRowContext(ctx, query, roleID).Scan(&role); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return "", nil
+		}
+		return "", err
+	}
+
+	return role, nil
+}
+
+func (r *userRepositoryImpl) FindByID(ctx context.Context, id int64) (*entity.User, error) {
+	query := `
+	SELECT
+		u.id,
+		u.username,
+		u.email,
+		u.hash_password,
+		u.full_name,
+		u.profile_pic_url,
+		u.is_verified,
+		r.name
+	FROM
+		users u
+	JOIN
+		roles r
+	ON
+		u.role_id = r.id
+		AND r.deleted_at IS NULL
+	WHERE
+		u.id = $1
+		AND u.deleted_at IS NULL
+	`
+
+	var user entity.User
+	err := r.db.QueryRowContext(ctx, query, id).Scan(
+		&user.ID,
+		&user.Username,
+		&user.Email,
+		&user.HashPassword,
+		&user.FullName,
+		&user.ProfilePicURL,
+		&user.IsVerified,
+		&user.Role,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &user, nil
 }
