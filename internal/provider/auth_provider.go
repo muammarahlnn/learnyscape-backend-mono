@@ -12,6 +12,7 @@ import (
 
 func BootstrapAuth(cfg *config.Config, router *gin.RouterGroup) {
 	accountVerifiedPublisher := mq.NewAccountVerifiedPublisher(rabbitmq)
+	forgotPasswordPublisher := mq.NewForgotPasswordPublisher(rabbitmq)
 
 	authDataStore := repository.NewAuthDataStore(dataStore)
 	authService := service.NewAuthService(
@@ -22,6 +23,7 @@ func BootstrapAuth(cfg *config.Config, router *gin.RouterGroup) {
 		jwtUtil,
 		sendVerificationPublisher,
 		accountVerifiedPublisher,
+		forgotPasswordPublisher,
 	)
 	authHandler := handler.NewAuthHandler(authService)
 

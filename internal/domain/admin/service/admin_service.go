@@ -4,10 +4,11 @@ import (
 	"context"
 	"learnyscape-backend-mono/internal/config"
 	. "learnyscape-backend-mono/internal/domain/admin/dto"
-	"learnyscape-backend-mono/internal/domain/admin/httperror"
+	. "learnyscape-backend-mono/internal/domain/admin/httperror"
 	"learnyscape-backend-mono/internal/domain/admin/repository"
 	. "learnyscape-backend-mono/internal/domain/shared/dto"
 	"learnyscape-backend-mono/internal/domain/shared/entity"
+	. "learnyscape-backend-mono/internal/domain/shared/httperror"
 	tokenutil "learnyscape-backend-mono/internal/domain/shared/util/token"
 	. "learnyscape-backend-mono/pkg/dto"
 	"learnyscape-backend-mono/pkg/mq"
@@ -68,7 +69,7 @@ func (s *adminServiceimpl) CreateUser(ctx context.Context, req *CreateUserReques
 			return err
 		}
 		if user != nil {
-			return httperror.NewUserAlreadyExistsError()
+			return NewUserAlreadyExistsError()
 		}
 
 		user, err = userRepo.FindByIdentifier(ctx, req.Email)
@@ -76,7 +77,7 @@ func (s *adminServiceimpl) CreateUser(ctx context.Context, req *CreateUserReques
 			return err
 		}
 		if user != nil {
-			return httperror.NewUserAlreadyExistsError()
+			return NewUserAlreadyExistsError()
 		}
 
 		hashedPassword, err := s.hasher.Hash(req.Password)
@@ -141,7 +142,7 @@ func (s *adminServiceimpl) GetUser(ctx context.Context, id int64) (*UserResponse
 		return nil, err
 	}
 	if user == nil {
-		return nil, httperror.NewUserNotFoundError()
+		return nil, NewUserNotFoundError()
 	}
 
 	return ToUserResponse(user), nil
@@ -155,7 +156,7 @@ func (s *adminServiceimpl) UpdateUser(ctx context.Context, id int64, req *Updaet
 		return nil, err
 	}
 	if user == nil {
-		return nil, httperror.NewUserNotFoundError()
+		return nil, NewUserNotFoundError()
 	}
 
 	user, err = userRepo.Update(ctx, &entity.UpdateUserParams{
@@ -179,7 +180,7 @@ func (s *adminServiceimpl) DeleteUser(ctx context.Context, id int64) error {
 		return err
 	}
 	if user == nil {
-		return httperror.NewUserNotFoundError()
+		return NewUserNotFoundError()
 	}
 
 	if err := userRepo.Delete(ctx, id); err != nil {

@@ -1,12 +1,10 @@
 package handler
 
 import (
-	"fmt"
 	"learnyscape-backend-mono/internal/domain/admin/dto"
 	"learnyscape-backend-mono/internal/domain/admin/service"
 	ginutil "learnyscape-backend-mono/pkg/util/gin"
 	pageutil "learnyscape-backend-mono/pkg/util/page"
-	"reflect"
 
 	"github.com/gin-gonic/gin"
 )
@@ -66,7 +64,6 @@ func (h *AdminHandler) searchUser(ctx *gin.Context) {
 	pagination := ginutil.ParsePagination(ctx)
 	req := &dto.SearchUserRequest{Pagination: pagination}
 	if err := ctx.ShouldBindQuery(req); err != nil {
-		fmt.Println("masukk:", reflect.TypeOf(err))
 		ctx.Error(err)
 		return
 	}

@@ -25,6 +25,7 @@ func (h *AuthHandler) Route(r *gin.RouterGroup) {
 		g.POST("/refresh", h.refresh)
 		g.POST("/verify", h.verify)
 		g.POST("/resend-verification", h.resendVerification)
+		g.POST("/forgot-password", h.forgotPassword)
 	}
 }
 
@@ -88,5 +89,20 @@ func (h *AuthHandler) resendVerification(ctx *gin.Context) {
 		return
 	}
 
-	ginutil.ResponseOK(ctx, "success resending verification email")
+	ginutil.ResponseNoContent(ctx)
+}
+
+func (h *AuthHandler) forgotPassword(ctx *gin.Context) {
+	var req dto.ForgotPasswordRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	if err := h.authService.ForgotPassword(ctx, &req); err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	ginutil.ResponseNoContent(ctx)
 }

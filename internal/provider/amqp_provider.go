@@ -9,5 +9,6 @@ func BootstrapAMQP() []mq.AMQPConsumer {
 	return []mq.AMQPConsumer{
 		mailmq.NewSendVerificationConsumer(rabbitmq, mailer),
 		mailmq.NewAccountVerifiedConsumer(rabbitmq, mailer),
+		mailmq.NewForgotPasswordConsumer(rabbitmq, mailer),
 	}
 }

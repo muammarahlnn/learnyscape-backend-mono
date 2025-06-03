@@ -36,3 +36,13 @@ type AccountVerifiedEvent struct {
 func (e AccountVerifiedEvent) Key() string {
 	return constant.AccountVerifiedKey
 }
+
+type ForgotPasswordEvent struct {
+	Email string `json:"email"`
+	Name  string `json:"name"`
+	Token string `json:"token"`
+}
+
+func (e ForgotPasswordEvent) Key() string {
+	return constant.ForgotPasswordKey
+}
