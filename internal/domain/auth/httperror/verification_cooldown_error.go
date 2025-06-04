@@ -7,8 +7,8 @@ import (
 	"net/http"
 )
 
-func NewResetPasswordTokenAlreadyExistsError() *httperror.ResponseError {
-	msg := constant.VerificationTokenAlreadyExistsErrorMessage
+func NewVerificationCooldownError() *httperror.ResponseError {
+	msg := constant.VerificationCooldownErrorMessage
 	err := errors.New(msg)
 
 	return httperror.NewResponseError(err, http.StatusUnauthorized, msg)

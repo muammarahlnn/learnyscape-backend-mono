@@ -248,7 +248,7 @@ func (s *authServiceImpl) ResendVerification(ctx context.Context, req *ResendVer
 			ctx,
 			fmt.Sprintf(constant.VerificationTokenKey, user.ID),
 		); token != "" && err != redis.Nil {
-			return NewVerificationTokenAlreadyExistsError()
+			return NewVerificationCooldownError()
 		}
 
 		params := &CreateVerificationParams{
@@ -300,14 +300,14 @@ func (s *authServiceImpl) ForgotPassword(ctx context.Context, req *ForgotPasswor
 			return err
 		}
 		if user == nil {
-			return NewUserNotFoundError()
+			return nil
 		}
 
 		if token, err := s.redis.Get(
 			ctx,
 			fmt.Sprintf(constant.ResetPasswordTokenKey, user.ID),
 		); token != "" && err != redis.Nil {
-			return NewResetPasswordTokenAlreadyExistsError()
+			return NewForgotPasswordCooldownError()
 		}
 
 		token, err := resetPasswordRepo.FindUnexpiredTokenByUserID(ctx, user.ID)

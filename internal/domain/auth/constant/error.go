@@ -7,7 +7,8 @@ const (
 	UserAlreadyVerifiedErrorMessage             = "user already verified"
 	VerificationTokenExpiredErrorMessage        = "verification token expired"
 	InvalidVerificationTokenErrorMessage        = "invalid verification token"
-	VerificationTokenAlreadyExistsErrorMessage  = "verification token already exists"
+	VerificationCooldownErrorMessage            = "A verification email has already been sent. Please wait before trying again."
 	EmailNotVerifiedErrorMessage                = "email not verified"
 	ResetPasswordTokenAlreadyExistsErrorMessage = "reset password token already exists"
+	ForgotPasswordCooldErrorMessage             = "A reset password email has already been sent. Please wait before trying again."
 )
