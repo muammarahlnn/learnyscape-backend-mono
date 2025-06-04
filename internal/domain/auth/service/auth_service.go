@@ -29,6 +29,7 @@ type AuthService interface {
 	Verify(ctx context.Context, req *VerificationRequest) (*VerificationResponse, error)
 	ResendVerification(ctx context.Context, req *ResendVerificationRequest) error
 	ForgotPassword(ctx context.Context, req *ForgotPasswordRequest) error
+	ResetPassword(ctx context.Context, req *ResetPasswordRequest) error
 }
 
 type authServiceImpl struct {
@@ -357,6 +358,52 @@ func (s *authServiceImpl) ForgotPassword(ctx context.Context, req *ForgotPasswor
 			Email: user.Email,
 			Name:  user.FullName,
 			Token: token.Token,
+		}); err != nil {
+			return err
+		}
+
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *authServiceImpl) ResetPassword(ctx context.Context, req *ResetPasswordRequest) error {
+	user, err := s.dataStore.UserRepository().FindByEmail(ctx, req.Email)
+	if err != nil {
+		return err
+	}
+	if user == nil {
+		return NewResetPasswordError()
+	}
+
+	token, err := s.dataStore.ResetPasswordRepository().FindUnexpiredTokenByUserID(ctx, user.ID)
+	if err != nil {
+		return err
+	}
+	if token == nil {
+		return NewResetPasswordError()
+	}
+
+	err = s.dataStore.WithinTx(ctx, func(ds repository.AuthDataStore) error {
+		userRepo := ds.UserRepository()
+		resetPasswordRepo := ds.ResetPasswordRepository()
+
+		if err := resetPasswordRepo.UseToken(ctx, token.Token); err != nil {
+			return err
+		}
+
+		hashedPassword, err := s.hasher.Hash(req.NewPassword)
+		if err != nil {
+			return err
+		}
+
+		if err := userRepo.ChangePassword(ctx, &ChangePasswordParams{
+			UserID:          token.UserID,
+			NewHashPassword: hashedPassword,
 		}); err != nil {
 			return err
 		}

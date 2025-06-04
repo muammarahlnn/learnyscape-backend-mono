@@ -10,6 +10,7 @@ import (
 type ResetPasswordRepository interface {
 	Create(ctx context.Context, params *entity.CreateResetPasswordTokenParams) (*entity.ResetPasswordToken, error)
 	FindUnexpiredTokenByUserID(ctx context.Context, userId int64) (*entity.ResetPasswordToken, error)
+	UseToken(ctx context.Context, token string) error
 }
 
 type resetPasswordRepositoryImpl struct {
@@ -99,4 +100,22 @@ func (r *resetPasswordRepositoryImpl) FindUnexpiredTokenByUserID(ctx context.Con
 	}
 
 	return &token, nil
+}
+
+func (r *resetPasswordRepositoryImpl) UseToken(ctx context.Context, token string) error {
+	query := `
+	UPDATE
+		reset_password_tokens
+	SET
+		token_expiry = NOW(),
+		deleted_at = NOW()
+	WHERE
+		token = $1
+	`
+
+	if _, err := r.db.ExecContext(ctx, query, token); err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -35,3 +35,8 @@ type UpdateUserParams struct {
 	Email    string
 	FullName string
 }
+
+type ChangePasswordParams struct {
+	UserID          int64
+	NewHashPassword string
+}

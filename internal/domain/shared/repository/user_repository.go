@@ -19,6 +19,7 @@ type UserRepository interface {
 	FindByID(ctx context.Context, id int64) (*entity.User, error)
 	Delete(ctx context.Context, id int64) error
 	FindByEmail(ctx context.Context, email string) (*entity.User, error)
+	ChangePassword(ctx context.Context, params *entity.ChangePasswordParams) error
 }
 
 type userRepositoryImpl struct {
@@ -401,4 +402,23 @@ func (r *userRepositoryImpl) FindByEmail(ctx context.Context, email string) (*en
 	}
 
 	return &user, nil
+}
+
+func (r *userRepositoryImpl) ChangePassword(ctx context.Context, params *entity.ChangePasswordParams) error {
+	query := `
+	UPDATE
+		users
+	SET
+		hash_password = $1,
+		updated_at = NOW()
+	WHERE
+		id = $2
+		AND deleted_at IS NULL
+	`
+
+	if _, err := r.db.ExecContext(ctx, query, params.NewHashPassword, params.UserID); err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -26,6 +26,7 @@ func (h *AuthHandler) Route(r *gin.RouterGroup) {
 		g.POST("/verify", h.verify)
 		g.POST("/resend-verification", h.resendVerification)
 		g.POST("/forgot-password", h.forgotPassword)
+		g.PUT("/reset-password", h.resetPassword)
 	}
 }
 
@@ -100,6 +101,21 @@ func (h *AuthHandler) forgotPassword(ctx *gin.Context) {
 	}
 
 	if err := h.authService.ForgotPassword(ctx, &req); err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	ginutil.ResponseNoContent(ctx)
+}
+
+func (h *AuthHandler) resetPassword(ctx *gin.Context) {
+	var req dto.ResetPasswordRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	if err := h.authService.ResetPassword(ctx, &req); err != nil {
 		ctx.Error(err)
 		return
 	}
